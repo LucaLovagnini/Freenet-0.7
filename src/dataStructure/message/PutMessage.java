@@ -37,15 +37,14 @@ public class PutMessage extends ForwardMessage {
 		}
 
 		// get the Linkable protocol of the sender FPeer to access to its neighbors
-		final LinkableProtocol lp = (LinkableProtocol) sender.getProtocol(mp.getLpId());
-		DarkPeer receiver = lp.getClosestNeighbor(this.messageLocationKey);
-		
+		DarkPeer receiver = ((LinkableProtocol) sender.getProtocol(mp.getLpId()))
+				.getClosestNeighbor(this.messageLocationKey);
 		//if sender is closer than the closest neigbor w.r.t the message key
 		if(this.isCloserThan(sender.getLocationKey(), receiver.getLocationKey())){
 			//then store the message location key
 			sender.storeKey(this.messageLocationKey);
 			//notify the key generator that the key has been stored somewhere (so we can do get operation on it)
-			KeysGenerator.addStoredKey(this.messageLocationKey);;
+			KeysGenerator.addStoredKey(this.messageLocationKey);
 			MessageProtocol.printPeerAction(sender, "key="+sender.getLocationKey()+" storing key="+this.messageLocationKey+
 					" closest nieghbor key="+receiver.getLocationKey());
 		}

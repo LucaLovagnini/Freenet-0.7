@@ -7,7 +7,6 @@ import java.util.Random;
 import control.KeysGenerator;
 
 import dataStructure.DarkPeer;
-import dataStructure.MessageLog;
 import dataStructure.message.BackwardMessage;
 import dataStructure.message.ForwardMessage;
 import dataStructure.message.GetMessage;
@@ -34,13 +33,16 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	private int cacheInter;
 	private int cacheFreq;
 	private double getProb;
-	//Hash map <id, log> for all messages sent, where:
-	//id: message ID
-	//log: message log, i.e. a pair <receivedFrom, sentTo> where:
-	//receivedFrom: node who sent the received message 
-	//sentTo: is the list of nodes who the message has been forwarded to 
-	private HashMap<Long, MessageLog> messageLogs = new HashMap<Long , MessageLog>();
+	public static boolean putGenerated = false;
+	public static boolean getGenerated = false;
 	
+	//Used to implement depth-first mechanisms, useful especially for GetMessage
+	//Each element is of the form <messageId, sentToNodes>, where:
+	//messageId: the id of the original get message
+	//seenNodes: list of nodes that message has been already sent to
+	//notice that is for this object that orginalMessageId field in Message has been introduced
+	private HashMap<Long, HashSet<Long>> messagesSent = new HashMap<Long, HashSet<Long>>();
+		
 	public MessageProtocol(String prefix){
 		this.mpId		= Configuration.getPid(prefix + ".mpId");
 		this.urtId		= Configuration.getPid(prefix + ".urtId");
@@ -76,7 +78,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		mp.mpId = this.mpId;
 		mp.swapFreq = this.swapFreq;
 		mp.topK = this.topK;
-		mp.messageLogs = new HashMap<Long , MessageLog>();
+		mp.messagesSent = new HashMap<Long, HashSet<Long>>();
 		return mp;
 	}
 	
@@ -91,14 +93,13 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	}
 	
 	public void sendForwardMessage(DarkPeer sender, DarkPeer receiver, ForwardMessage message){
-		MessageLog m = new MessageLog(message.getPreviousDarkPeer(), receiver);
-		//add the message to log
-		messageLogs.put(message.messageId, m);
+		//add message to log
+		addToMessageSent(message.originalMessageId, receiver.getID());
 		//decrease hops-to-live
 		message.decreaseHTL();
 		//set sender as the previous peer who managed the message
 		message.setPreviousDarkPeer(sender);
-		//get the transport protocol
+		//get transport protocol
 		UniformRandomTransport urt = (UniformRandomTransport) sender.getProtocol(this.getUrtId());
 		printPeerAction(sender, "key="+sender.getLocationKey()+" forwarding message "+message+
 				" to "+receiver.getID()+" key="+receiver.getLocationKey());
@@ -107,9 +108,19 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	}
 	
 	public void sendBackwardMessage(DarkPeer sender, BackwardMessage message){
-		//check if sender is the destination node
-		if(sender.getID() == message.destinationid)
+		//if the routing path is empty, then it means that this is the destination node
+		if(message.getRoutingPathSize() == 0)
 			printPeerAction(sender, "received answer message: "+message.toString());
+		else{
+			//get the next node in the routing path
+			DarkPeer previousPeer = message.popRoutingPath();
+			//get transport protocol
+			UniformRandomTransport urt = (UniformRandomTransport) sender.getProtocol(this.getUrtId());
+			printPeerAction(sender, "key="+sender.getLocationKey()+" backwarding message "+message+
+					" to "+previousPeer.getID()+" key="+previousPeer.getLocationKey());
+			//send the message
+			urt.send(sender, previousPeer, message, this.mpId);
+		}
 	}
 	
 	/**
@@ -122,9 +133,8 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		final LinkableProtocol lp = (LinkableProtocol) darkPeer.getProtocol(lpId);
 		
 		Message message = null;
-		//TODO: add Swap case
 		//generate get message
-		if(doGet()){
+		if(putGenerated && !getGenerated || doGet()){
 			float getContentKey = KeysGenerator.getContentKeyForGet();
 			if(getContentKey != -1){
 				message = new GetMessage(KeysGenerator.getContentKeyForGet(), HTL, darkPeer.getID());
@@ -135,6 +145,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		}
 		//generate put message
 		else{
+			putGenerated=true;
 			message = new PutMessage(KeysGenerator.getNextContentKey(), HTL, darkPeer.getID());
 			printPeerAction(darkPeer, "doing a put message key="+message.messageLocationKey);
 		}
@@ -148,8 +159,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 			//randomly select a neighbor
 			final int peerToSwapIndex = (new Random(System.nanoTime())).nextInt(lp.degree());
 			DarkPeer peerToSwap = (DarkPeer) lp.getNeighbor(peerToSwapIndex);
-			printPeerAction(darkPeer, "trying to swap with "+peerToSwap.getID());
-			tryToSwap(darkPeer, peerToSwap);
+			//tryToSwap(darkPeer, peerToSwap);
 		}
 
 	}
@@ -234,6 +244,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 			//add A to B and vice versa
 			aLp.addNeighbor(B);
 			bLp.addNeighbor(A);
+			printPeerAction(A, "swapped with "+B.getID());
 		}
 	}
 
@@ -257,6 +268,30 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	public int getHTL() {
 		return HTL;
 	}
+	
 
+	public void addToMessageSent(long messageId, long nodeId){
+		//if this node has never seen this message
+		if(!messagesSent.containsKey(messageId)){
+			//creates a new entry
+			HashSet<Long> nodes = new HashSet<Long>();
+			//add the node that the message has been sent to
+			nodes.add(nodeId);
+			messagesSent.put(messageId, nodes);
+		}
+		else
+			messagesSent.get(messageId).add(nodeId);
+	}
+	
+	public HashSet<Long> getMessageSent(long messageId){
+		if(messagesSent.containsKey(messageId))
+			throw new RuntimeException("messagesSent doesn't contain "+messageId);
+		else
+			return messagesSent.get(messageId);
+	}
+	
+	public boolean alreadySeenMessage(long messageId){
+		return messagesSent.containsKey(messageId);
+	}
 	
 }

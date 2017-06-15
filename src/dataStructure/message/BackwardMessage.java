@@ -1,18 +1,29 @@
 package dataStructure.message;
 
+import java.util.Stack;
+
+import dataStructure.DarkPeer;
+
 public abstract class BackwardMessage extends Message {
 	
-	public final long destinationid;
-
-	public BackwardMessage(float messageLocationKey, long destinationId) {
-		super(messageLocationKey);
-		this.destinationid = destinationId;
-		// TODO Auto-generated constructor stub
+	protected final Stack<DarkPeer> routingPath;
+	
+	public BackwardMessage(float messageLocationKey, Stack<DarkPeer> routingPath, long originalMessageId) {
+		super(messageLocationKey, originalMessageId);
+		this.routingPath = routingPath;
 	}
 
 	public BackwardMessage(BackwardMessage another){
 		super(another);
-		destinationid = another.destinationid;
+		routingPath = another.routingPath;
+	}
+
+	public int getRoutingPathSize() {
+		return routingPath.size();
+	}
+	
+	public DarkPeer popRoutingPath() {
+		return routingPath.pop();
 	}
 
 }

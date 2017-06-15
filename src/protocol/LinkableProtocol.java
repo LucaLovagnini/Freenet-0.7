@@ -2,6 +2,7 @@ package protocol;
 
 import java.util.NavigableSet;
 import java.util.TreeSet;
+import java.util.AbstractCollection;
 import java.util.Iterator;
 
 import dataStructure.DarkPeer;
@@ -107,6 +108,44 @@ public class LinkableProtocol implements Linkable, Protocol {
 				return biggerDarkPeer.getDistanceFromLocationKey(locationKey) > 
 				smallerDarkPeer.getDistanceFromLocationKey(locationKey) ? smallerDarkPeer : biggerDarkPeer;
 			}
+	}
+	
+	public <E extends AbstractCollection<T>, T> DarkPeer getClosestNeighbor(float locationKey, E alreadySeen){
+		DarkPeer keyPeer = new DarkPeer(null, null, locationKey);
+		// get the set of all FPeers with location key strictly less than the passed location key
+		NavigableSet<DarkPeer> smallerDarkPeers =  darkNeighbors.headSet(keyPeer, false);
+		// get the set of all FPeers with location key strictly greater than the passed location key
+		NavigableSet<DarkPeer> biggerDarkPeers =  darkNeighbors.tailSet(keyPeer, false);
+		Iterator<DarkPeer> smallerIt = smallerDarkPeers.descendingIterator();
+		Iterator<DarkPeer> biggerIt = biggerDarkPeers.iterator();
+		DarkPeer chosenPeer =null;
+		//we define a "suitable node" a node that didn't receive the message already
+		do{
+		//if there are no suitable neighbors with smaller key
+		if(!smallerIt.hasNext())
+			//if there are no suitable neighbors with bigger key
+			if(!biggerIt.hasNext()){
+				//we have sent the message to all the neighbors already
+				break;
+			}
+			//if there are suitable neighbors with bigger key
+			else
+				chosenPeer = biggerIt.next();
+		else
+			//if there are suitable neighbors with smaller key, but no suitable node with bigger key
+			if(!biggerIt.hasNext())
+				chosenPeer = smallerIt.next();
+			//if there are suitable neighbors with both smaller and bigger keys
+			else{
+				DarkPeer biggerDarkPeer = biggerIt.next();
+				DarkPeer smallerDarkPeer = smallerIt.next();
+				chosenPeer = biggerDarkPeer.getDistanceFromLocationKey(locationKey) > 
+				smallerDarkPeer.getDistanceFromLocationKey(locationKey) ? smallerDarkPeer : biggerDarkPeer;
+			}
+		}
+		//check if the chosen peer has already received this message
+		while(alreadySeen.contains(chosenPeer));	
+		return chosenPeer;
 	}
 
 }

@@ -6,13 +6,28 @@ import protocol.MessageProtocol;
 
 public abstract class Message implements Cloneable {
 	private static long nextMessageId = 0;
-	public final long  messageId;
+	//this field is required when this message refers to another message
+	//e.g. : GetNotFoundMessage refers to a GetMessage with id originalMessageId
+	//this is not always required (e.g. PutMessage)
+	public final long  originalMessageId;
 	public final float messageLocationKey;
 	//peer who sent the message
 	private DarkPeer previousDarkPeer = null;
 
+	/**
+	 * Constructor used when this message is generated as answer from another.
+	 * For example, when we create {@code GetFoundMessage} we use the same id of
+	 * the correspondent {@cod GetMessage}.
+	 * @param messageLocationKey content id
+	 * @param originalMessageId id of the original message generated
+	 */
+	public Message(float messageLocationKey, long originalMessageId){
+		this.originalMessageId = originalMessageId;
+		this.messageLocationKey = messageLocationKey;
+	}
+	
 	public Message(float messageLocationKey){
-		this.messageId = nextMessageId++;
+		this.originalMessageId = nextMessageId++;
 		this.messageLocationKey = messageLocationKey;
 	}
 	
@@ -22,14 +37,14 @@ public abstract class Message implements Cloneable {
 	 */
 	protected Message(Message another)
 	{
-		this.messageId = another.messageId;
 		this.messageLocationKey = another.messageLocationKey;
 		this.previousDarkPeer = another.previousDarkPeer;
+		this.originalMessageId = another.originalMessageId;
 	}
 	
 	@Override
 	public String toString(){
-		return "mId="+messageId+" locKey="+messageLocationKey+" type="+this.getClass();
+		return "mId="+this.originalMessageId+" locKey="+messageLocationKey+" type="+this.getClass();
 	}
 		
 	public DarkPeer getPreviousDarkPeer() {
