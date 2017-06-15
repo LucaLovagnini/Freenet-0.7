@@ -112,6 +112,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	public void nextCycle(Node peer, int pid) {
 		final DarkPeer darkPeer = (DarkPeer) peer;
 		System.out.println("Time "+CDState.getTime()+" Peer id="+peer.getID());
+		final LinkableProtocol lp = (LinkableProtocol) darkPeer.getProtocol(lpId);
 		/*
 		Message message;
 		//TODO: add Swap case
@@ -127,33 +128,33 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		}
 		message.doMessageAction(darkPeer, this);
 		
+		*/
 		final long time = CDState.getTime();
 		//check if we have to swap location key
 		if(time %swapFreq == 0){
 			//randomly select a neighbor
-			final LinkableProtocol lp = (LinkableProtocol) darkPeer.getProtocol(lpId);
 			final int peerToSwapIndex = (new Random(System.nanoTime())).nextInt(lp.degree());
 			DarkPeer peerToSwap = (DarkPeer) lp.getNeighbor(peerToSwapIndex);
+			System.out.println("Trying to swap with "+peerToSwap.darkId);
 			tryToSwap(darkPeer, peerToSwap);
 		}
-		*/
+
 	}
 	
 	private void addToNeighbors(DarkPeer toAdd, LinkableProtocol toAddLp){
-		for(DarkPeer darkNeighbor : toAddLp.getNeighborTree())
-				if(!((LinkableProtocol) darkNeighbor.getProtocol(lpId)).removeNeighbor(toAdd))
+		for(DarkPeer darkNeighbor : toAddLp.getNeighborTree()){
+				if(!((LinkableProtocol) darkNeighbor.getProtocol(lpId)).addNeighbor(toAdd))
 					throw new RuntimeException(darkNeighbor.getID()+" is already a neighbor of "+toAdd.getID());
-
+		}
 	}
 	
 	private void removeFromNeighbors(DarkPeer toRemove, DarkPeer toAvoid, LinkableProtocol toRemoveLp){
-		float toAvoidKey = toAvoid.getLocationKey();
-		for(DarkPeer darkNeighbor : toRemoveLp.getNeighborTree())
+		for(DarkPeer darkNeighbor : toRemoveLp.getNeighborTree()){
 			//if darkNeighbor is toAvoid, skip it
-			if(darkNeighbor.getLocationKey() != toAvoidKey)
+			if(darkNeighbor != toAvoid)
 				if(!((LinkableProtocol) darkNeighbor.getProtocol(lpId)).removeNeighbor(toRemove))
 					throw new RuntimeException(darkNeighbor.getID()+" is not a neighbor of "+toRemove.getID());
-
+		}
 	}
 
 	private void tryToSwap(DarkPeer A, DarkPeer B) {
@@ -167,6 +168,10 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		LinkableProtocol aLp = (LinkableProtocol) A.getProtocol(lpId);		
 		//for each a's neighbor
 		for(DarkPeer aNeighbor : aLp.getNeighborTree()){
+			//Skip B, otherwise pb2 becomes 0
+			if(aNeighbor == B)
+				continue;
+			//A's neighbor key
 			float ank = aNeighbor.getLocationKey();
 			pa1 *= Math.abs(ak - ank);
 			pb2 *= Math.abs(bk - ank);
@@ -175,6 +180,10 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		LinkableProtocol bLp = (LinkableProtocol) B.getProtocol(lpId);		
 		//for each b's neighbor
 		for(DarkPeer bNeighbor : bLp.getNeighborTree()){
+			//Skip A, otherwise pa2 becomes 0
+			if(bNeighbor == A)
+				continue;
+			//B's neighbor key
 			float bnk = bNeighbor.getLocationKey();
 			pa2 *= Math.abs(ak - bnk);
 			pb1 *= Math.abs(bk - bnk);
@@ -189,7 +198,8 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 			//remove A from each of its neighbors (except for B)
 			removeFromNeighbors(A, B, aLp);
 			//remove B from each of its neighbors (except for A)
-			removeFromNeighbors(B, A, bLp);
+			removeFromNeighbors(B, A, bLp);		
+			
 			//remove A from B and vice versa
 			aLp.removeNeighbor(B);
 			bLp.removeNeighbor(A);
