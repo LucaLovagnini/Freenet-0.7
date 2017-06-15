@@ -5,13 +5,16 @@ import peersim.cdsim.CDState;
 import protocol.LinkableProtocol;
 import protocol.MessageProtocol;
 
-public class PutMessage extends Message {
+public class PutMessage extends ForwardMessage {
 
-	public PutMessage(float messageLocationKey, int HTL) {
-		super(messageLocationKey, HTL);
-		// TODO Auto-generated constructor stub
+	public PutMessage(float messageLocationKey, int HTL, long originId) {
+		super(messageLocationKey, HTL, originId);
 	}
 	
+	/**
+	 * Copy constructor used to clone an abstract class with final fields
+	 * @param another
+	 */
 	public PutMessage(PutMessage another){
 		super(another);
 	}
@@ -30,17 +33,29 @@ public class PutMessage extends Message {
 		if(sender.containsKey(this.messageLocationKey)){
 			if(!this.hasBeenSent())
 				throw new RuntimeException("Impossible case: sender="+sender.getID()+" contains key="+this.messageLocationKey);
-			mp.forwardMessage(sender, this.getPreviousDarkPeer(), new PutDuplicate(this.messageLocationKey, mp.getHTL()));
 			return;
 		}
-		
+
 		// get the Linkable protocol of the sender FPeer to access to its neighbors
 		final LinkableProtocol lp = (LinkableProtocol) sender.getProtocol(mp.getLpId());
 		DarkPeer receiver = lp.getClosestNeighbor(this.messageLocationKey);
 		
+		//if sender is closer than the closest neigbor w.r.t the message key
+		if(this.isCloserThan(sender.getLocationKey(), receiver.getLocationKey())){
+			//then store the message location key
+			sender.storeKey(this.messageLocationKey);
+			receiver = this.getPreviousDarkPeer();
+			//create a backward ok message, where the destination node is the one who created this message
+			//mp.sendForwardMessage(sender, receiver, new PutReply(this.messageLocationKey, this.originId));
+		}
+		else{
+			//forward the message to the closest neighbor
+			
+		}
+		
 		System.out.print("Time "+CDState.getTime()+" Peer "+sender.getID()+" PUT message HTL="+this.getHTL());
 		System.out.println(" forwarding to "+receiver.getID());
-		mp.forwardMessage(sender, receiver, this);
+		mp.sendForwardMessage(sender, receiver, this);
 	}
 
 

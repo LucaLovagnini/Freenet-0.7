@@ -36,12 +36,21 @@ public class LinkableProtocol implements Linkable, Protocol {
 		lp.darkNeighbors = new TreeSet<DarkPeer>();
 		return lp;
 	}
+	
+	public TreeSet<DarkPeer> getNeighborTree(){
+		return darkNeighbors;
+	}
 
 	@Override
 	public boolean addNeighbor(Node darkPeer) {
 		return this.darkNeighbors.add((DarkPeer) darkPeer);
 	}
-
+	
+	
+	public boolean removeNeighbor(DarkPeer darkPeer)
+	{
+		return this.darkNeighbors.remove(darkPeer);
+	}
 	@Override
 	public boolean contains(Node darkPeer) {
 		return this.darkNeighbors.contains((DarkPeer) darkPeer);

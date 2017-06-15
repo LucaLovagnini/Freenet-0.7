@@ -8,18 +8,12 @@ public abstract class Message implements Cloneable {
 	private static long nextMessageId = 0;
 	public final long  messageId;
 	public final float messageLocationKey;
-	//message's hops-to-live counter. We set it as private so we are sure that we can only decrease and reset it, nothing else
-	private int HTL;
-	//closest location w.r.t. messageLocationKey met up to now
-	private float bestLocationKey;
 	//peer who sent the message
 	private DarkPeer previousDarkPeer = null;
 
-	public Message(float messageLocationKey, int HTL){
+	public Message(float messageLocationKey){
 		this.messageId = nextMessageId++;
 		this.messageLocationKey = messageLocationKey;
-		this.HTL = HTL;
-		this.bestLocationKey = -1;
 	}
 	
 	/**
@@ -28,8 +22,6 @@ public abstract class Message implements Cloneable {
 	 */
 	protected Message(Message another)
 	{
-		this.bestLocationKey = another.bestLocationKey;
-		this.HTL = another.HTL;
 		this.messageId = another.messageId;
 		this.messageLocationKey = another.messageLocationKey;
 		this.previousDarkPeer = another.previousDarkPeer;
@@ -37,17 +29,9 @@ public abstract class Message implements Cloneable {
 	
 	@Override
 	public String toString(){
-		return "mId="+messageId+" locKey="+messageLocationKey+" HTL="+HTL+" bestLocKey="+bestLocationKey;
+		return "mId="+messageId+" locKey="+messageLocationKey+" type="+this.getClass();
 	}
-	
-	public int decreaseHTL() {
-		return HTL--;
-	}
-	
-	public int getHTL(){
-		return HTL;
-	}
-	
+		
 	public DarkPeer getPreviousDarkPeer() {
 		return previousDarkPeer;
 	}
@@ -66,7 +50,10 @@ public abstract class Message implements Cloneable {
 	}
 	
 	public boolean isCloserThan(double locationKey1, double locationKey2){
-		
+		final double dist1 = Math.abs(locationKey1 - messageLocationKey);
+		final double dist2 = Math.abs(locationKey2 - messageLocationKey);
+
+		return (Math.min(dist1, 1 - dist1) < Math.min(dist2, 1 - dist2));
 	}
 	
 	public abstract void doMessageAction(DarkPeer sender, MessageProtocol mp);
