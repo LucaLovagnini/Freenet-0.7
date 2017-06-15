@@ -111,7 +111,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	@Override
 	public void nextCycle(Node peer, int pid) {
 		final DarkPeer darkPeer = (DarkPeer) peer;
-		System.out.print("Time "+CDState.getTime()+" Peer id="+peer.getID());
+		System.out.println("Time "+CDState.getTime()+" Peer id="+peer.getID());
 		/*
 		Message message;
 		//TODO: add Swap case
