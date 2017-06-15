@@ -1,5 +1,6 @@
 package dataStructure.message;
 
+import java.util.HashSet;
 import java.util.Stack;
 
 import dataStructure.DarkPeer;
@@ -9,10 +10,12 @@ import protocol.MessageProtocol;
 public class GetMessage extends ForwardMessage {
 	
 	private final Stack<DarkPeer> routingPath;
+	private final HashSet<DarkPeer> allPeersVisited;
 	
-	public GetMessage(float messageLocationKey, int HTL, long originId) {
-		super(messageLocationKey, HTL, originId);
+	public GetMessage(float messageLocationKey, int HTL) {
+		super(messageLocationKey, HTL);
 		routingPath = new Stack<DarkPeer>();
+		allPeersVisited = new HashSet<DarkPeer>();
 	}
 	
 	/**
@@ -24,35 +27,48 @@ public class GetMessage extends ForwardMessage {
 	 * @param originId the id of the node who created the get message
 	 * @param originalMessageId the id of the original message, it is used by {@code alreadySeen} in {@code MessageProtocol}
 	 */
-	public GetMessage(float messageLocationKey, int HTL, long originalMessageId, Stack<DarkPeer> routingPath) {
+	public GetMessage(float messageLocationKey, int HTL, long originalMessageId, 
+			HashSet<DarkPeer> allPeersVisited, Stack<DarkPeer> routingPath) {
 		super(messageLocationKey, HTL, originalMessageId);
 		this.routingPath = routingPath;
+		this.allPeersVisited = allPeersVisited;
 	}
 	
 	public GetMessage(GetMessage another){
 		super(another);
 		routingPath = another.routingPath;
+		allPeersVisited = another.allPeersVisited;
 	}
 
 	@Override
 	public void doMessageAction(DarkPeer sender, MessageProtocol mp) {
+		System.out.println("Printing routing path:");
+		for(DarkPeer previousPeer : routingPath)
+			System.out.println(previousPeer.getID());
+		System.out.println("All peers visited:");
+		for(DarkPeer visitedPeer : allPeersVisited)
+			System.out.println(visitedPeer.getID());
+		//add this node to the list of visited nodes
+		//debugging check: a node can't receive the same get message twice
+		if(!allPeersVisited.add(sender))
+			throw new RuntimeException("message "+this+" already seen "+sender.getID());
 		//if the node has the searched content
 		if(sender.containsKey(this.messageLocationKey)){
 			MessageProtocol.printPeerAction(sender, " has key "+this.messageLocationKey+", routing back the answer");
 		}
 		//if the node doesn't have the searched message and he has never seen this message...
-		else if(!mp.alreadySeenMessage(this.originalMessageId)){
+		else if(!allPeersVisited.contains(this)){
 			//forward the GetMessage to the closest node w.r.t the content key
 			//note that we don't forward the message to nodes that already received this message
 			DarkPeer receiver = ((LinkableProtocol) sender.getProtocol(mp.getLpId()))
-					.getClosestNeighbor(this.messageLocationKey, this.routingPath);
+					.getClosestNeighbor(this.messageLocationKey, this.allPeersVisited);
 			//if no receiver is available, it means one of these two cases:
 			//1. that we are going to create a cycle (think to a triangle)
 			//2. the only neighbor is the one who sent this message
 			if(receiver == null){
 				//in any case, create a GetNotFoudnMessage
 				GetNotFoundMessage message = new GetNotFoundMessage(
-						this.messageLocationKey, routingPath, originalMessageId, this.getHTL());
+						this.messageLocationKey, allPeersVisited, routingPath, originalMessageId, this.getHTL());
 				mp.sendBackwardMessage(sender, message);
 			}
 			//forward the message if HTL > 0
@@ -64,7 +80,7 @@ public class GetMessage extends ForwardMessage {
 			//if we want to forward the message, but HTL=0, then send back content not found
 			else{
 				GetNotFoundMessage message = new GetNotFoundMessage(
-						this.messageLocationKey, routingPath, originalMessageId, this.getHTL());
+						this.messageLocationKey, allPeersVisited, routingPath, originalMessageId, this.getHTL());
 				mp.sendBackwardMessage(sender, message);
 			}
 		}

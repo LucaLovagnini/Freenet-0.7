@@ -1,5 +1,7 @@
 package dataStructure.message;
 
+import java.util.HashSet;
+
 import dataStructure.DarkPeer;
 import dataStructure.message.Message;
 import protocol.MessageProtocol;
@@ -12,7 +14,7 @@ public abstract class Message implements Cloneable {
 	public final long  originalMessageId;
 	public final float messageLocationKey;
 	//peer who sent the message
-	private DarkPeer previousDarkPeer = null;
+	private HashSet<DarkPeer> allPeersVisited;
 
 	/**
 	 * Constructor used when this message is generated as answer from another.
@@ -38,31 +40,14 @@ public abstract class Message implements Cloneable {
 	protected Message(Message another)
 	{
 		this.messageLocationKey = another.messageLocationKey;
-		this.previousDarkPeer = another.previousDarkPeer;
 		this.originalMessageId = another.originalMessageId;
+		this.allPeersVisited = another.allPeersVisited;
 	}
 	
 	@Override
 	public String toString(){
 		return "mId="+this.originalMessageId+" locKey="+messageLocationKey+" type="+this.getClass();
-	}
-		
-	public DarkPeer getPreviousDarkPeer() {
-		return previousDarkPeer;
-	}
-
-	public void setPreviousDarkPeer(DarkPeer previousDarkPeer) {
-		this.previousDarkPeer = previousDarkPeer;
-	}
-	
-
-	/**
-	 * Check if the message has just been generated or not
-	 * @return true if the messasge has been seent at least once (there is a {@code previousDarkPeer}, false otherwise
-	 */
-	public boolean hasBeenSent(){
-		return this.previousDarkPeer != null;
-	}
+	}	
 	
 	public boolean isCloserThan(double locationKey1, double locationKey2){
 		final double dist1 = Math.abs(locationKey1 - messageLocationKey);

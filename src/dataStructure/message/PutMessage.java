@@ -7,8 +7,8 @@ import protocol.MessageProtocol;
 
 public class PutMessage extends ForwardMessage {
 
-	public PutMessage(float messageLocationKey, int HTL, long originId) {
-		super(messageLocationKey, HTL, originId);
+	public PutMessage(float messageLocationKey, int HTL) {
+		super(messageLocationKey, HTL);
 	}
 	
 	/**
@@ -30,11 +30,8 @@ public class PutMessage extends ForwardMessage {
 		//The sender node contains already the key, which means 2 things:
 		//	1. Since each Put key is unique, this should not be possible if {@code sender} created the messsage
 		//  2. {@code sender} has already stored the key, send a {@code PutDuplicate} message
-		if(sender.containsKey(this.messageLocationKey)){
-			if(!this.hasBeenSent())
-				throw new RuntimeException("Impossible case: sender="+sender.getID()+" contains key="+this.messageLocationKey);
+		if(sender.containsKey(this.messageLocationKey))
 			return;
-		}
 
 		// get the Linkable protocol of the sender FPeer to access to its neighbors
 		DarkPeer receiver = ((LinkableProtocol) sender.getProtocol(mp.getLpId()))

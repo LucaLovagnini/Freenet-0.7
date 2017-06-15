@@ -33,6 +33,7 @@ public class Setup implements Control {
 		try
 		{
 			DarkPeer darkPeer = new DarkPeer(darkNode, id, KeysGenerator.getNextContentKey());
+			System.out.println("darkId="+darkPeer.darkId+" id="+darkPeer.getID());
 			Network.add(darkPeer);
 			return darkPeer;
 		}
@@ -53,6 +54,7 @@ public class Setup implements Control {
 	        lines = stream.collect(Collectors.toList());
 			for(String line : lines){
 				String[] peerPair = line.split(",");
+				System.out.println(peerPair[0]+","+peerPair[1]);
 				DarkPeer first 	= nodes.get(peerPair[0]);
 				DarkPeer second	= nodes.get(peerPair[1]);
 				//if null -> never seen this peer before

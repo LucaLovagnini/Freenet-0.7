@@ -10,13 +10,13 @@ public abstract class ForwardMessage extends Message {
 	//closest location w.r.t. messageLocationKey met up to now
 	private float bestLocationKey;
 
-	public ForwardMessage(float messageLocationKey, int HTL, long originId, long originalMessageId) {
+	public ForwardMessage(float messageLocationKey, int HTL, long originalMessageId) {
 		super(messageLocationKey, originalMessageId);
 		this.HTL = HTL;
 		// TODO Auto-generated constructor stub
 	}
 	
-	public ForwardMessage(float messageLocationKey, int HTL, long originId) {
+	public ForwardMessage(float messageLocationKey, int HTL) {
 		super(messageLocationKey);
 		this.HTL = HTL;
 		// TODO Auto-generated constructor stub

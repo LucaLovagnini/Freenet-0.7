@@ -2,7 +2,7 @@ package protocol;
 
 import java.util.NavigableSet;
 import java.util.TreeSet;
-import java.util.AbstractCollection;
+import java.util.HashSet;
 import java.util.Iterator;
 
 import dataStructure.DarkPeer;
@@ -110,7 +110,7 @@ public class LinkableProtocol implements Linkable, Protocol {
 			}
 	}
 	
-	public <E extends AbstractCollection<T>, T> DarkPeer getClosestNeighbor(float locationKey, E alreadySeen){
+	public DarkPeer getClosestNeighbor(float locationKey, HashSet<DarkPeer> allPeersVisited){
 		DarkPeer keyPeer = new DarkPeer(null, null, locationKey);
 		// get the set of all FPeers with location key strictly less than the passed location key
 		NavigableSet<DarkPeer> smallerDarkPeers =  darkNeighbors.headSet(keyPeer, false);
@@ -126,6 +126,7 @@ public class LinkableProtocol implements Linkable, Protocol {
 			//if there are no suitable neighbors with bigger key
 			if(!biggerIt.hasNext()){
 				//we have sent the message to all the neighbors already
+				chosenPeer = null;
 				break;
 			}
 			//if there are suitable neighbors with bigger key
@@ -144,7 +145,7 @@ public class LinkableProtocol implements Linkable, Protocol {
 			}
 		}
 		//check if the chosen peer has already received this message
-		while(alreadySeen.contains(chosenPeer));	
+		while(allPeersVisited.contains(chosenPeer));	
 		return chosenPeer;
 	}
 
