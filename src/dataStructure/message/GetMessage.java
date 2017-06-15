@@ -15,7 +15,10 @@ public class GetMessage extends ForwardMessage {
 
 	@Override
 	public void doMessageAction(DarkPeer sender, MessageProtocol mp) {
-		System.out.println("GET MESSAGE ACTION!");
+		//if the node has the searched content
+		if(sender.containsKey(this.messageLocationKey)){
+			MessageProtocol.printPeerAction(sender, " has key "+this.messageLocationKey+", routing back the answer");
+		}
 	}
 	
 	@Override

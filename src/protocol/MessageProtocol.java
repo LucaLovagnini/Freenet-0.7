@@ -39,7 +39,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	//log: message log, i.e. a pair <receivedFrom, sentTo> where:
 	//receivedFrom: node who sent the received message 
 	//sentTo: is the list of nodes who the message has been forwarded to 
-	private HashMap<Long, MessageLog> messageLogs;
+	private HashMap<Long, MessageLog> messageLogs = new HashMap<Long , MessageLog>();
 	
 	public MessageProtocol(String prefix){
 		this.mpId		= Configuration.getPid(prefix + ".mpId");
@@ -76,7 +76,12 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		mp.mpId = this.mpId;
 		mp.swapFreq = this.swapFreq;
 		mp.topK = this.topK;
+		mp.messageLogs = new HashMap<Long , MessageLog>();
 		return mp;
+	}
+	
+	public static void printPeerAction(DarkPeer peer, String action){
+		System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" "+action);
 	}
 	
 	private boolean doGet(){
@@ -86,14 +91,17 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	}
 	
 	public void sendForwardMessage(DarkPeer sender, DarkPeer receiver, ForwardMessage message){
+		MessageLog m = new MessageLog(message.getPreviousDarkPeer(), receiver);
 		//add the message to log
-		messageLogs.put(message.messageId, new MessageLog(message.getPreviousDarkPeer(), receiver));
+		messageLogs.put(message.messageId, m);
 		//decrease hops-to-live
 		message.decreaseHTL();
 		//set sender as the previous peer who managed the message
 		message.setPreviousDarkPeer(sender);
 		//get the transport protocol
 		UniformRandomTransport urt = (UniformRandomTransport) sender.getProtocol(this.getUrtId());
+		printPeerAction(sender, "key="+sender.getLocationKey()+" forwarding message "+message+
+				" to "+receiver.getID()+" key="+receiver.getLocationKey());
 		//send the message
 		urt.send(sender, receiver, message, this.mpId);
 	}
@@ -101,7 +109,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	public void sendBackwardMessage(DarkPeer sender, BackwardMessage message){
 		//check if sender is the destination node
 		if(sender.getID() == message.destinationid)
-			System.out.println("Peer id="+sender.getID()+" received answer meessage: "+message.toString());
+			printPeerAction(sender, "received answer message: "+message.toString());
 	}
 	
 	/**
@@ -111,31 +119,36 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	@Override
 	public void nextCycle(Node peer, int pid) {
 		final DarkPeer darkPeer = (DarkPeer) peer;
-		System.out.println("Time "+CDState.getTime()+" Peer id="+peer.getID());
 		final LinkableProtocol lp = (LinkableProtocol) darkPeer.getProtocol(lpId);
-		/*
-		Message message;
+		
+		Message message = null;
 		//TODO: add Swap case
 		//generate get message
 		if(doGet()){
-			System.out.println(" doing a get message");
-			message = new GetMessage(KeysGenerator.getNextContentKeys(), HTL);
+			float getContentKey = KeysGenerator.getContentKeyForGet();
+			if(getContentKey != -1){
+				message = new GetMessage(KeysGenerator.getContentKeyForGet(), HTL, darkPeer.getID());
+				printPeerAction(darkPeer, "doing a get message key="+message.messageLocationKey);
+			}
+			else
+				printPeerAction(darkPeer, "doing a get message, but no key has been stored yet!");
 		}
 		//generate put message
 		else{
-			System.out.println(" doing a put message");
-			message = new PutMessage(KeysGenerator.getNextContentKeys(), HTL, darkPeer.getID());
+			message = new PutMessage(KeysGenerator.getNextContentKey(), HTL, darkPeer.getID());
+			printPeerAction(darkPeer, "doing a put message key="+message.messageLocationKey);
 		}
-		message.doMessageAction(darkPeer, this);
+		if(message != null)
+			message.doMessageAction(darkPeer, this);
 		
-		*/
+		
 		final long time = CDState.getTime();
 		//check if we have to swap location key
 		if(time %swapFreq == 0){
 			//randomly select a neighbor
 			final int peerToSwapIndex = (new Random(System.nanoTime())).nextInt(lp.degree());
 			DarkPeer peerToSwap = (DarkPeer) lp.getNeighbor(peerToSwapIndex);
-			System.out.println("Trying to swap with "+peerToSwap.darkId);
+			printPeerAction(darkPeer, "trying to swap with "+peerToSwap.getID());
 			tryToSwap(darkPeer, peerToSwap);
 		}
 
@@ -228,7 +241,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	public void processEvent(Node peer, int pid, Object mex) {
 		DarkPeer 	darkPeer = (DarkPeer) peer;
 		Message		message = (Message) mex;
-		System.out.println("Peer id="+peer.getID()+" received message: "+mex.toString());
+		printPeerAction(darkPeer, "received message "+mex.toString());
 		
 		message.doMessageAction(darkPeer, this);
 	}

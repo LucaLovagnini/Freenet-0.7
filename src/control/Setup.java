@@ -1,6 +1,7 @@
 package control;
 
 import java.util.List;
+import java.util.Map;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -31,7 +32,7 @@ public class Setup implements Control {
 	public DarkPeer newPeer(String id){
 		try
 		{
-			DarkPeer darkPeer = new DarkPeer(darkNode, id, KeysGenerator.getNextContentKeys());
+			DarkPeer darkPeer = new DarkPeer(darkNode, id, KeysGenerator.getNextContentKey());
 			Network.add(darkPeer);
 			return darkPeer;
 		}
@@ -52,7 +53,6 @@ public class Setup implements Control {
 	        lines = stream.collect(Collectors.toList());
 			for(String line : lines){
 				String[] peerPair = line.split(",");
-				System.out.println("values[0]="+peerPair[0]+" values[1]="+peerPair[1]);
 				DarkPeer first 	= nodes.get(peerPair[0]);
 				DarkPeer second	= nodes.get(peerPair[1]);
 				//if null -> never seen this peer before
@@ -75,7 +75,14 @@ public class Setup implements Control {
 			e.printStackTrace();
 			return true;
 		}
-		System.out.println(Network.size());
+		for(Map.Entry<String, DarkPeer> entry : nodes.entrySet()){
+			DarkPeer darkPeer = entry.getValue();
+			System.out.print("id="+darkPeer.getID()+" key="+darkPeer.getLocationKey()+" ");
+			for(DarkPeer darkNeighbor : ((LinkableProtocol) darkPeer.getProtocol(lpId)).getNeighborTree())
+				System.out.print(darkNeighbor.getID()+" ");
+			System.out.println();
+		}
+		System.out.println("Network size="+Network.size());
 		return false;
 	}
 

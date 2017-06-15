@@ -1,7 +1,7 @@
 package dataStructure.message;
 
+import control.KeysGenerator;
 import dataStructure.DarkPeer;
-import peersim.cdsim.CDState;
 import protocol.LinkableProtocol;
 import protocol.MessageProtocol;
 
@@ -44,18 +44,17 @@ public class PutMessage extends ForwardMessage {
 		if(this.isCloserThan(sender.getLocationKey(), receiver.getLocationKey())){
 			//then store the message location key
 			sender.storeKey(this.messageLocationKey);
-			receiver = this.getPreviousDarkPeer();
-			//create a backward ok message, where the destination node is the one who created this message
-			//mp.sendForwardMessage(sender, receiver, new PutReply(this.messageLocationKey, this.originId));
+			//notify the key generator that the key has been stored somewhere (so we can do get operation on it)
+			KeysGenerator.addStoredKey(this.messageLocationKey);;
+			MessageProtocol.printPeerAction(sender, "key="+sender.getLocationKey()+" storing key="+this.messageLocationKey+
+					" closest nieghbor key="+receiver.getLocationKey());
 		}
 		else{
 			//forward the message to the closest neighbor
-			
+			mp.sendForwardMessage(sender, receiver, this);
+
 		}
 		
-		System.out.print("Time "+CDState.getTime()+" Peer "+sender.getID()+" PUT message HTL="+this.getHTL());
-		System.out.println(" forwarding to "+receiver.getID());
-		mp.sendForwardMessage(sender, receiver, this);
 	}
 
 

@@ -40,7 +40,6 @@ public abstract class ForwardMessage extends Message {
 		this.bestLocationKey = bestLocationKey;
 	}
 	
-	@Override
 	public String toString(){
 		return super.toString()+" originId="+originId+" HTL="+HTL;
 	}

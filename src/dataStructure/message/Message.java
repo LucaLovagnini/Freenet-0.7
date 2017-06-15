@@ -53,7 +53,8 @@ public abstract class Message implements Cloneable {
 		final double dist1 = Math.abs(locationKey1 - messageLocationKey);
 		final double dist2 = Math.abs(locationKey2 - messageLocationKey);
 
-		return (Math.min(dist1, 1 - dist1) < Math.min(dist2, 1 - dist2));
+		//the "=" is important, otherwise if they are at the same distance, a loop happens
+		return (Math.min(dist1, 1 - dist1) <= Math.min(dist2, 1 - dist2));
 	}
 	
 	public abstract void doMessageAction(DarkPeer sender, MessageProtocol mp);
