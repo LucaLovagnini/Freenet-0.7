@@ -112,6 +112,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	public void nextCycle(Node peer, int pid) {
 		final DarkPeer darkPeer = (DarkPeer) peer;
 		System.out.print("Time "+CDState.getTime()+" Peer id="+peer.getID());
+		/*
 		Message message;
 		//TODO: add Swap case
 		//generate get message
@@ -135,6 +136,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 			DarkPeer peerToSwap = (DarkPeer) lp.getNeighbor(peerToSwapIndex);
 			tryToSwap(darkPeer, peerToSwap);
 		}
+		*/
 	}
 	
 	private void addToNeighbors(DarkPeer toAdd, LinkableProtocol toAddLp){

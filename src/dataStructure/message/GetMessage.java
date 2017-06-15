@@ -3,10 +3,10 @@ package dataStructure.message;
 import dataStructure.DarkPeer;
 import protocol.MessageProtocol;
 
-public class GetMessage extends Message {
+public class GetMessage extends ForwardMessage {
 
-	public GetMessage(float messageLocationKey, int HTL) {
-		super(messageLocationKey, HTL);
+	public GetMessage(float messageLocationKey, int HTL, long originId) {
+		super(messageLocationKey, HTL, originId);
 	}
 	
 	public GetMessage(GetMessage another){
