@@ -44,6 +44,8 @@ public class PutMessage extends ForwardMessage {
 			MessageProtocol.printPeerAction(sender, this, "NO NEIGHBORS AVAILABLE!");
 			return;
 		}
+		//if this node is the closest one w.r.t. all the previous key, then HTL is reset
+		this.isBestDistance(sender, sender.getDistanceFromLocationKey(this.messageLocationKey));
 		//if sender is closer than the closest neigbor w.r.t the message key
 		if(this.isCloserThan(sender.getLocationKey(), receiver.getLocationKey())){
 			//then store the message location key
@@ -51,15 +53,31 @@ public class PutMessage extends ForwardMessage {
 			//notify the key generator that the key has been stored somewhere (so we can do get operation on it)
 			KeysGenerator.addStoredKey(this.messageLocationKey);
 			MessageProtocol.printPeerAction(sender, this, "STORED HERE!");
+			forwardToEverybody(sender, mp);
 		}
 		//if this node is the closest one w.r.t. all the previous key, then HTL is reset (and is > 0 for sure)
 		//otherwise, check if HTL>0 and in that case forward the message
-		else if(this.isBestDistance(sender, sender.getDistanceFromLocationKey(this.messageLocationKey)) || this.getHTL()>0){
+		else if(this.getHTL()>0){
 			mp.sendForwardMessage(sender, receiver, this);
 
 		}
 		else
 			MessageProtocol.printPeerAction(sender, this, "DYING!");
+	}
+
+	private void forwardToEverybody(DarkPeer sender, MessageProtocol mp) {
+		//notice that we already reset HTL (if it was the case)
+		//when we store a key in a node, it's ALWAYS the closest node w.r.t. all the other peers 
+		LinkableProtocol lp = (LinkableProtocol) sender.getProtocol(mp.getLpId());
+		//for each neighbor
+		for(DarkPeer darkNeighbor : lp.getNeighborTree()){
+			//forward Put only if the neighbor didn't receive the message already
+			if(!this.allPeersVisited.contains(darkNeighbor)){
+				//TODO: check if it's ok to forward this or we have to do a "new"
+				mp.sendForwardMessage(sender, darkNeighbor, this);
+			}
+		}
+		
 	}
 
 
