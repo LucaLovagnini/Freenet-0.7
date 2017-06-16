@@ -27,9 +27,9 @@ public class GetMessage extends ForwardMessage {
 	 * @param originId the id of the node who created the get message
 	 * @param originalMessageId the id of the original message, it is used by {@code alreadySeen} in {@code MessageProtocol}
 	 */
-	public GetMessage(float messageLocationKey, int HTL, long originalMessageId, 
+	public GetMessage(float messageLocationKey, int HTL, double bestDistance, long originalMessageId, int originalHTL, 
 			HashSet<DarkPeer> allPeersVisited, Stack<DarkPeer> routingPath) {
-		super(messageLocationKey, HTL, originalMessageId);
+		super(messageLocationKey, HTL, bestDistance, originalMessageId, originalHTL);
 		this.routingPath = routingPath;
 		this.allPeersVisited = allPeersVisited;
 	}
@@ -50,8 +50,10 @@ public class GetMessage extends ForwardMessage {
 		if(sender.containsKey(this.messageLocationKey)){
 			MessageProtocol.printPeerAction(sender, this, "FOUND HERE!");
 		}
-		//if the node doesn't have the searched message and he has never seen this message...
-		else if(!allPeersVisited.contains(this)){
+		//if the node doesn't have the searched message...
+		else {
+			if(this.isBestDistance(sender.getDistanceFromLocationKey(this.messageLocationKey)))
+				MessageProtocol.printPeerAction(sender, this, "RESET HTL!");
 			//forward the GetMessage to the closest node w.r.t the content key
 			//note that we don't forward the message to nodes that already received this message
 			DarkPeer receiver = ((LinkableProtocol) sender.getProtocol(mp.getLpId()))
@@ -59,29 +61,22 @@ public class GetMessage extends ForwardMessage {
 			//if no receiver is available, it means one of these two cases:
 			//1. that we are going to create a cycle (think to a triangle)
 			//2. the only neighbor is the one who sent this message
-			if(receiver == null){
+			if(receiver == null || this.getHTL()==0){
 				//in any case, create a GetNotFoudnMessage
-				GetNotFoundMessage message = new GetNotFoundMessage(
-						this.messageLocationKey, allPeersVisited, routingPath, originalMessageId, this.getHTL());
+				if(this.getHTL() == 0)
+					MessageProtocol.printPeerAction(sender, this, "DYING!");
+				else
+					MessageProtocol.printPeerAction(sender, this, "NO NEIGHBORS AVAILABLE!");
+				GetNotFoundMessage message = new GetNotFoundMessage(messageLocationKey, allPeersVisited, 
+						routingPath, originalMessageId, originalHTL, this.getHTL(), this.getBestDistance());
 				mp.sendBackwardMessage(sender, message);
 			}
-			//forward the message if HTL > 0
-			else if(this.getHTL()>0){
+			//forward the message only if HTL > 0 AND there is at least a neighbor available
+			else{
 				//add the current node to the routing path
 				routingPath.add(sender);
 				mp.sendForwardMessage(sender, receiver, this);
 			}
-			//if we want to forward the message, but HTL=0, then send back content not found
-			else{
-				GetNotFoundMessage message = new GetNotFoundMessage(
-						this.messageLocationKey, allPeersVisited, routingPath, originalMessageId, this.getHTL());
-				mp.sendBackwardMessage(sender, message);
-			}
-		}
-		//if the node have already seen this message
-		//this should not be possible since we avoid cycles with routingPath
-		else{
-			throw new RuntimeException("Peer "+sender.getID()+" has already seen message "+this);
 		}
 	}
 	

@@ -12,18 +12,23 @@ public class GetNotFoundMessage extends BackwardMessage {
 	//the HTL of the message which created this BackwardMessage
 	//it will be used as HTL in case we generate a new GetMessage
 	private final int getMessageHTL;
+	//the best distance of the message which created this message
+	//it will be used as best distance in case we generate a new GetMessage
+	private final double getBestDistance;
 	private final HashSet<DarkPeer> allPeersVisited;
 	
 	public GetNotFoundMessage(float messageLocationKey, HashSet<DarkPeer> allPeersVisited,
-			Stack<DarkPeer> routingPath, long originalMessageId, int getMessageHTL){
-		super(messageLocationKey, routingPath, originalMessageId);
+			Stack<DarkPeer> routingPath, long originalMessageId, int originalHTL, int getMessageHTL, double getBestDistance){
+		super(messageLocationKey, routingPath, originalMessageId, originalHTL);
 		this.getMessageHTL = getMessageHTL;
+		this.getBestDistance = getBestDistance;
 		this.allPeersVisited = allPeersVisited;
 	}
 	
 	public GetNotFoundMessage(GetNotFoundMessage another){
 		super(another);
 		this.getMessageHTL = another.getMessageHTL;
+		this.getBestDistance = another.getBestDistance;
 		this.allPeersVisited = another.allPeersVisited;
 	}
 
@@ -32,6 +37,12 @@ public class GetNotFoundMessage extends BackwardMessage {
 		//debug check: it's impossible that we receive a GetNotFoundMessage for a message that we have never seen before
 		if(!allPeersVisited.contains(sender))
 			throw new RuntimeException("Peer "+sender.darkId+" has never seen message "+this.originalMessageId);
+		//if there are no hops available, then send back a not found message
+		if(this.getMessageHTL <= 0){
+			GetNotFoundMessage message = new GetNotFoundMessage(this);
+			mp.sendBackwardMessage(sender, message);
+			return;
+		}
 		//send the get message to the node which satisfies the following conditions:
 		//1. is the closest neighbor w.r.t. the message key
 		//2. he didn't receive this get message yet
@@ -50,8 +61,8 @@ public class GetNotFoundMessage extends BackwardMessage {
 			//notice that HTL has the same value of the previous GetMessage
 			//notice that we pass the old routingPath
 			//(i.e. the one who created this GetNotFoundMessage)
-			GetMessage message = new GetMessage(this.messageLocationKey, this.getMessageHTL, 
-				 this.originalMessageId, this.allPeersVisited, this.routingPath);
+			GetMessage message = new GetMessage(this.messageLocationKey, this.getMessageHTL, this.getBestDistance,
+				 this.originalMessageId, this.originalHTL, this.allPeersVisited, this.routingPath);
 			mp.sendForwardMessage(sender, receiver, message);
 		}
 	}

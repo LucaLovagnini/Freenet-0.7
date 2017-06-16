@@ -93,11 +93,11 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	}
 	
 	public void sendForwardMessage(DarkPeer sender, DarkPeer receiver, ForwardMessage message){
+		printPeerAction(sender, message, "to "+receiver.getID());
 		//decrease hops-to-live
 		message.decreaseHTL();
 		//get transport protocol
 		UniformRandomTransport urt = (UniformRandomTransport) sender.getProtocol(this.getUrtId());
-		printPeerAction(sender, message, "to "+receiver.getID());
 		//send the message
 		urt.send(sender, receiver, message, this.mpId);
 	}
@@ -105,7 +105,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	public void sendBackwardMessage(DarkPeer sender, BackwardMessage message){
 		//if the routing path is empty, then it means that this is the destination node
 		if(message.getRoutingPathSize() == 0)
-			printPeerAction(sender, message);
+			printPeerAction(sender, message, "RESULT!");
 		else{
 			//get the next node in the routing path
 			DarkPeer previousPeer = message.popRoutingPath();

@@ -8,8 +8,8 @@ public abstract class BackwardMessage extends Message {
 	
 	protected final Stack<DarkPeer> routingPath;
 	
-	public BackwardMessage(float messageLocationKey, Stack<DarkPeer> routingPath, long originalMessageId) {
-		super(messageLocationKey, originalMessageId);
+	public BackwardMessage(float messageLocationKey, Stack<DarkPeer> routingPath, long originalMessageId, int originalHTL) {
+		super(messageLocationKey, originalMessageId, originalHTL);
 		this.routingPath = routingPath;
 	}
 

@@ -13,8 +13,12 @@ public abstract class Message implements Cloneable {
 	//this is not always required (e.g. PutMessage)
 	public final long  originalMessageId;
 	public final float messageLocationKey;
-	//peer who sent the message
+	//peers who forwarded the message
 	private HashSet<DarkPeer> allPeersVisited;
+	//used as reference to reset HTL. Used both by:
+	//ForwardMessage: in case the peer want to reset HTL
+	//BackwardMessage: in case the BackwardMessage generates a ForwardMessage (e.g. GetNotFoundMessage generates GetMessage)
+	public final int originalHTL;
 
 	/**
 	 * Constructor used when this message is generated as answer from another.
@@ -23,14 +27,16 @@ public abstract class Message implements Cloneable {
 	 * @param messageLocationKey content id
 	 * @param originalMessageId id of the original message generated
 	 */
-	public Message(float messageLocationKey, long originalMessageId){
+	public Message(float messageLocationKey, long originalMessageId, int originalHTL){
 		this.originalMessageId = originalMessageId;
 		this.messageLocationKey = messageLocationKey;
+		this.originalHTL = originalHTL;
 	}
 	
-	public Message(float messageLocationKey){
+	public Message(float messageLocationKey, int originalHTL){
 		this.originalMessageId = nextMessageId++;
 		this.messageLocationKey = messageLocationKey;
+		this.originalHTL = originalHTL;
 	}
 	
 	/**
@@ -42,6 +48,7 @@ public abstract class Message implements Cloneable {
 		this.messageLocationKey = another.messageLocationKey;
 		this.originalMessageId = another.originalMessageId;
 		this.allPeersVisited = another.allPeersVisited;
+		this.originalHTL = another.originalHTL;
 	}
 	
 	@Override

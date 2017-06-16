@@ -27,12 +27,8 @@ public class PutMessage extends ForwardMessage {
 	@Override
 	public void doMessageAction(DarkPeer sender, MessageProtocol mp) {
 		
-		//The sender node contains already the key, which means 2 things:
-		//	1. Since each Put key is unique, this should not be possible if {@code sender} created the messsage
-		//  2. {@code sender} has already stored the key, send a {@code PutDuplicate} message
 		if(sender.containsKey(this.messageLocationKey))
-			return;
-
+			throw new RuntimeException(sender.getID()+" already contains key "+this.messageLocationKey);
 		// get the Linkable protocol of the sender FPeer to access to its neighbors
 		DarkPeer receiver = ((LinkableProtocol) sender.getProtocol(mp.getLpId()))
 				.getClosestNeighbor(this.messageLocationKey);
@@ -44,12 +40,13 @@ public class PutMessage extends ForwardMessage {
 			KeysGenerator.addStoredKey(this.messageLocationKey);
 			MessageProtocol.printPeerAction(sender, this, "STORED HERE!");
 		}
-		else{
-			//forward the message to the closest neighbor
+		//forward the message to the closest neighbor only if HTL is positive
+		else if(this.getHTL()>0){
 			mp.sendForwardMessage(sender, receiver, this);
 
 		}
-		
+		else
+			MessageProtocol.printPeerAction(sender, this, "DYING!");
 	}
 
 

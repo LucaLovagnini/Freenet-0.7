@@ -8,16 +8,28 @@ public abstract class ForwardMessage extends Message {
 	//notice that only forward messages have a HTL
 	private int HTL;
 	//closest location w.r.t. messageLocationKey met up to now
-	private float bestLocationKey;
+	private double bestDistance = 1;
 
-	public ForwardMessage(float messageLocationKey, int HTL, long originalMessageId) {
-		super(messageLocationKey, originalMessageId);
+	/**
+	 * Used when this forward message is created as response to a {@code BackwardMessage}.
+	 * For example when node receives {@code GetNotFound} but can forward GetMessage to another neighbor.
+	 * @param messageLocationKey
+	 * @param HTL
+	 * @param originalMessageId
+	 */
+	public ForwardMessage(float messageLocationKey, int HTL, double bestDistance, long originalMessageId, int originalHTL) {
+		super(messageLocationKey, originalMessageId, originalHTL);
 		this.HTL = HTL;
-		// TODO Auto-generated constructor stub
+		this.bestDistance = bestDistance;
 	}
 	
+	/**
+	 * Used when this is a new message
+	 * @param messageLocationKey
+	 * @param HTL
+	 */
 	public ForwardMessage(float messageLocationKey, int HTL) {
-		super(messageLocationKey);
+		super(messageLocationKey, HTL);
 		this.HTL = HTL;
 		// TODO Auto-generated constructor stub
 	}
@@ -27,6 +39,8 @@ public abstract class ForwardMessage extends Message {
 	}
 	
 	public int decreaseHTL() {
+		if(HTL==0)
+			throw new RuntimeException("HTL can't be negative!");
 		return HTL--;
 	}
 	
@@ -34,16 +48,26 @@ public abstract class ForwardMessage extends Message {
 		return HTL;
 	}
 	
-	public float getBestLocationKey() {
-		return bestLocationKey;
-	}
 
-	public void setBestLocationKey(float bestLocationKey) {
-		this.bestLocationKey = bestLocationKey;
+	public boolean isBestDistance(double distance) {
+		System.out.println("distance="+distance+" bestDistance="+bestDistance);
+		if(distance < bestDistance){
+			//update best distance
+			bestDistance = distance;
+			//reset HTL
+			this.HTL = this.originalHTL;
+			return true;
+		}
+		else
+			return false;
 	}
 	
 	public String toString(){
 		return super.toString()+" HTL="+HTL;
+	}
+	
+	public double getBestDistance(){
+		return bestDistance;
 	}
 
 }
