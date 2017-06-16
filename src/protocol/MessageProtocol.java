@@ -74,8 +74,16 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		return mp;
 	}
 	
-	public static void printPeerAction(DarkPeer peer, String action){
-		System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" "+action);
+	public static void printPeerAction(DarkPeer peer, Message message){
+		System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" locationKey="+peer.getLocationKey()+" "+message.toString());
+	}
+	
+	public static void printPeerAction(DarkPeer peer, Message message, String bonus){
+		System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" locationKey="+peer.getLocationKey()+" "+message.toString()+" "+bonus);		
+	}
+	
+	public static void printPeerAction(DarkPeer peer, String bonus){
+		System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" locationKey="+peer.getLocationKey()+" "+bonus);		
 	}
 	
 	private boolean doGet(){
@@ -89,8 +97,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		message.decreaseHTL();
 		//get transport protocol
 		UniformRandomTransport urt = (UniformRandomTransport) sender.getProtocol(this.getUrtId());
-		printPeerAction(sender, "key="+sender.getLocationKey()+" forwarding message "+message+
-				" to "+receiver.getID()+" key="+receiver.getLocationKey());
+		printPeerAction(sender, message, "to "+receiver.getID());
 		//send the message
 		urt.send(sender, receiver, message, this.mpId);
 	}
@@ -98,14 +105,13 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	public void sendBackwardMessage(DarkPeer sender, BackwardMessage message){
 		//if the routing path is empty, then it means that this is the destination node
 		if(message.getRoutingPathSize() == 0)
-			printPeerAction(sender, "received answer message: "+message.toString());
+			printPeerAction(sender, message);
 		else{
 			//get the next node in the routing path
 			DarkPeer previousPeer = message.popRoutingPath();
 			//get transport protocol
 			UniformRandomTransport urt = (UniformRandomTransport) sender.getProtocol(this.getUrtId());
-			printPeerAction(sender, "key="+sender.getLocationKey()+" backwarding message "+message+
-					" to "+previousPeer.getID()+" key="+previousPeer.getLocationKey());
+			printPeerAction(sender, message, "to "+previousPeer.getID());
 			//send the message
 			urt.send(sender, previousPeer, message, this.mpId);
 		}
@@ -121,22 +127,35 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		final LinkableProtocol lp = (LinkableProtocol) darkPeer.getProtocol(lpId);
 		
 		Message message = null;
+		//TODO: add Swap case
 		//generate get message
-		if(darkPeer.darkId.equals("d")){
-			message = new PutMessage((float) (darkPeer.getLocationKey()-0.001), HTL);
-			printPeerAction(darkPeer, "doing a put message key="+message.messageLocationKey);
-		}
-		else if(darkPeer.darkId.equals("a")){
+		if(doGet()){
 			float getContentKey = KeysGenerator.getContentKeyForGet();
 			if(getContentKey != -1){
 				message = new GetMessage(KeysGenerator.getContentKeyForGet(), HTL);
-				printPeerAction(darkPeer, "doing a get message key="+message.messageLocationKey);
+				printPeerAction(darkPeer, message, "GET GENERATED!");
 			}
 			else
 				printPeerAction(darkPeer, "doing a get message, but no key has been stored yet!");
 		}
+		//generate put message
+		else{
+			message = new PutMessage(KeysGenerator.getNextContentKey(), HTL);
+			printPeerAction(darkPeer, message, "PUT GENERATED!");
+		}
 		if(message != null)
 			message.doMessageAction(darkPeer, this);
+		/*
+		final long time = CDState.getTime();
+		//check if we have to swap location key
+		if(time %swapFreq == 0){
+			//randomly select a neighbor
+			final int peerToSwapIndex = (new Random(System.nanoTime())).nextInt(lp.degree());
+			DarkPeer peerToSwap = (DarkPeer) lp.getNeighbor(peerToSwapIndex);
+			tryToSwap(darkPeer, peerToSwap);
+		}
+		*/
+
 	}
 	
 	private void addToNeighbors(DarkPeer toAdd, LinkableProtocol toAddLp){
@@ -226,9 +245,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	@Override
 	public void processEvent(Node peer, int pid, Object mex) {
 		DarkPeer 	darkPeer = (DarkPeer) peer;
-		Message		message = (Message) mex;
-		printPeerAction(darkPeer, "received message "+mex.toString());
-		
+		Message		message = (Message) mex;		
 		message.doMessageAction(darkPeer, this);
 	}
 

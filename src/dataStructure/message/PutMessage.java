@@ -42,8 +42,7 @@ public class PutMessage extends ForwardMessage {
 			sender.storeKey(this.messageLocationKey);
 			//notify the key generator that the key has been stored somewhere (so we can do get operation on it)
 			KeysGenerator.addStoredKey(this.messageLocationKey);
-			MessageProtocol.printPeerAction(sender, "key="+sender.getLocationKey()+" storing key="+this.messageLocationKey+
-					" closest nieghbor key="+receiver.getLocationKey());
+			MessageProtocol.printPeerAction(sender, this, "STORED HERE!");
 		}
 		else{
 			//forward the message to the closest neighbor

@@ -29,9 +29,6 @@ public class GetNotFoundMessage extends BackwardMessage {
 
 	@Override
 	public void doMessageAction(DarkPeer sender, MessageProtocol mp) {
-		System.out.println("All peers visited:");
-		for(DarkPeer visitedPeer : allPeersVisited)
-			System.out.println(visitedPeer.getID());
 		//debug check: it's impossible that we receive a GetNotFoundMessage for a message that we have never seen before
 		if(!allPeersVisited.contains(sender))
 			throw new RuntimeException("Peer "+sender.darkId+" has never seen message "+this.originalMessageId);

@@ -140,7 +140,17 @@ public class LinkableProtocol implements Linkable, Protocol {
 			else{
 				DarkPeer biggerDarkPeer = biggerIt.next();
 				DarkPeer smallerDarkPeer = smallerIt.next();
-				chosenPeer = biggerDarkPeer.getDistanceFromLocationKey(locationKey) > 
+				//we can't check the chosen peer at the while condition
+				//because otherwise we loose the not chosen peer (we called .next())
+				//if the already visited peers include the bigger peer, then chose the smaller one
+				if(allPeersVisited.contains(biggerDarkPeer))
+					chosenPeer = smallerDarkPeer;
+				//chose the bigger one if we didn't visited it, but we visited the smaller one
+				else if(allPeersVisited.contains(smallerDarkPeer))
+					chosenPeer = biggerDarkPeer;
+				//if we didn't visit both of them, chose the one with smaller key
+				else
+					chosenPeer = biggerDarkPeer.getDistanceFromLocationKey(locationKey) > 
 				smallerDarkPeer.getDistanceFromLocationKey(locationKey) ? smallerDarkPeer : biggerDarkPeer;
 			}
 		}

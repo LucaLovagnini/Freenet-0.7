@@ -42,19 +42,13 @@ public class GetMessage extends ForwardMessage {
 
 	@Override
 	public void doMessageAction(DarkPeer sender, MessageProtocol mp) {
-		System.out.println("Printing routing path:");
-		for(DarkPeer previousPeer : routingPath)
-			System.out.println(previousPeer.getID());
-		System.out.println("All peers visited:");
-		for(DarkPeer visitedPeer : allPeersVisited)
-			System.out.println(visitedPeer.getID());
 		//add this node to the list of visited nodes
 		//debugging check: a node can't receive the same get message twice
 		if(!allPeersVisited.add(sender))
 			throw new RuntimeException("message "+this+" already seen "+sender.getID());
 		//if the node has the searched content
 		if(sender.containsKey(this.messageLocationKey)){
-			MessageProtocol.printPeerAction(sender, " has key "+this.messageLocationKey+", routing back the answer");
+			MessageProtocol.printPeerAction(sender, this, "FOUND HERE!");
 		}
 		//if the node doesn't have the searched message and he has never seen this message...
 		else if(!allPeersVisited.contains(this)){

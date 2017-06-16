@@ -46,7 +46,7 @@ public abstract class Message implements Cloneable {
 	
 	@Override
 	public String toString(){
-		return "mId="+this.originalMessageId+" locKey="+messageLocationKey+" type="+this.getClass();
+		return "mId="+this.originalMessageId+" messageLocationKey="+messageLocationKey+" type="+this.getClass();
 	}	
 	
 	public boolean isCloserThan(double locationKey1, double locationKey2){
