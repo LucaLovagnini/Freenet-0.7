@@ -1,6 +1,5 @@
 package protocol;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Random;
 
@@ -127,7 +126,6 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		final LinkableProtocol lp = (LinkableProtocol) darkPeer.getProtocol(lpId);
 		
 		Message message = null;
-		//TODO: add Swap case
 		//generate get message
 		if(doGet()){
 			float getContentKey = KeysGenerator.getContentKeyForGet();
@@ -145,7 +143,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		}
 		if(message != null)
 			message.doMessageAction(darkPeer, this);
-		/*
+		
 		final long time = CDState.getTime();
 		//check if we have to swap location key
 		if(time %swapFreq == 0){
@@ -154,7 +152,6 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 			DarkPeer peerToSwap = (DarkPeer) lp.getNeighbor(peerToSwapIndex);
 			tryToSwap(darkPeer, peerToSwap);
 		}
-		*/
 
 	}
 	

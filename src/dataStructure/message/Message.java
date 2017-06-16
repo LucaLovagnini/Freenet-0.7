@@ -13,8 +13,11 @@ public abstract class Message implements Cloneable {
 	//this is not always required (e.g. PutMessage)
 	public final long  originalMessageId;
 	public final float messageLocationKey;
-	//peers who forwarded the message
-	private HashSet<DarkPeer> allPeersVisited;
+	//peers who forwarded the message, used to avoid cycles
+	//this is useful for all kind of messages, for example:
+	//PutMessage: when we store the message in a node, we forward the message to all neighbors (and they must avoid cycles)
+	//GetMessage: since GetMessage forwards the message to the closest neighbor (without considering his key), this can create cycles
+	protected final HashSet<DarkPeer> allPeersVisited;
 	//used as reference to reset HTL. Used both by:
 	//ForwardMessage: in case the peer want to reset HTL
 	//BackwardMessage: in case the BackwardMessage generates a ForwardMessage (e.g. GetNotFoundMessage generates GetMessage)
@@ -27,16 +30,18 @@ public abstract class Message implements Cloneable {
 	 * @param messageLocationKey content id
 	 * @param originalMessageId id of the original message generated
 	 */
-	public Message(float messageLocationKey, long originalMessageId, int originalHTL){
+	public Message(float messageLocationKey, long originalMessageId, int originalHTL, HashSet<DarkPeer> allPeersVisited){
 		this.originalMessageId = originalMessageId;
 		this.messageLocationKey = messageLocationKey;
 		this.originalHTL = originalHTL;
+		this.allPeersVisited = allPeersVisited;
 	}
 	
-	public Message(float messageLocationKey, int originalHTL){
+	public Message(float messageLocationKey, int HTL){
 		this.originalMessageId = nextMessageId++;
 		this.messageLocationKey = messageLocationKey;
-		this.originalHTL = originalHTL;
+		this.originalHTL = HTL;
+		this.allPeersVisited = new HashSet<DarkPeer>();
 	}
 	
 	/**
@@ -45,10 +50,10 @@ public abstract class Message implements Cloneable {
 	 */
 	protected Message(Message another)
 	{
-		this.messageLocationKey = another.messageLocationKey;
 		this.originalMessageId = another.originalMessageId;
-		this.allPeersVisited = another.allPeersVisited;
+		this.messageLocationKey = another.messageLocationKey;
 		this.originalHTL = another.originalHTL;
+		this.allPeersVisited = another.allPeersVisited;
 	}
 	
 	@Override

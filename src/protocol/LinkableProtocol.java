@@ -85,31 +85,7 @@ public class LinkableProtocol implements Linkable, Protocol {
 		// TODO Auto-generated method stub
 
 	}
-	
-	public DarkPeer getClosestNeighbor(float locationKey){
-		DarkPeer keyPeer = new DarkPeer(null, null, locationKey);
-		// get the set of all FPeers with location key strictly less than the passed location key
-		NavigableSet<DarkPeer> smallerDarkPeers =  darkNeighbors.headSet(keyPeer, false);
-		// get the set of all FPeers with location key strictly greater than the passed location key
-		NavigableSet<DarkPeer> biggerDarkPeers =  darkNeighbors.tailSet(keyPeer, false);
-		Iterator<DarkPeer> smallerIt = smallerDarkPeers.descendingIterator();
-		Iterator<DarkPeer> biggerIt = biggerDarkPeers.iterator();
-		if(!smallerIt.hasNext())
-			if(!biggerIt.hasNext())
-				throw new RuntimeException("Both smallerIt and biggerIt doesn't have elements!");
-			else
-				return biggerIt.next();
-		else
-			if(!biggerIt.hasNext())
-				return smallerIt.next();
-			else{
-				DarkPeer biggerDarkPeer = biggerIt.next();
-				DarkPeer smallerDarkPeer = smallerIt.next();
-				return biggerDarkPeer.getDistanceFromLocationKey(locationKey) > 
-				smallerDarkPeer.getDistanceFromLocationKey(locationKey) ? smallerDarkPeer : biggerDarkPeer;
-			}
-	}
-	
+		
 	public DarkPeer getClosestNeighbor(float locationKey, HashSet<DarkPeer> allPeersVisited){
 		DarkPeer keyPeer = new DarkPeer(null, null, locationKey);
 		// get the set of all FPeers with location key strictly less than the passed location key

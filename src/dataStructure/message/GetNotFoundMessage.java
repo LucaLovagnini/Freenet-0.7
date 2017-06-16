@@ -15,21 +15,18 @@ public class GetNotFoundMessage extends BackwardMessage {
 	//the best distance of the message which created this message
 	//it will be used as best distance in case we generate a new GetMessage
 	private final double getBestDistance;
-	private final HashSet<DarkPeer> allPeersVisited;
 	
 	public GetNotFoundMessage(float messageLocationKey, HashSet<DarkPeer> allPeersVisited,
 			Stack<DarkPeer> routingPath, long originalMessageId, int originalHTL, int getMessageHTL, double getBestDistance){
-		super(messageLocationKey, routingPath, originalMessageId, originalHTL);
+		super(messageLocationKey, routingPath, originalMessageId, originalHTL, allPeersVisited);
 		this.getMessageHTL = getMessageHTL;
 		this.getBestDistance = getBestDistance;
-		this.allPeersVisited = allPeersVisited;
 	}
 	
 	public GetNotFoundMessage(GetNotFoundMessage another){
 		super(another);
 		this.getMessageHTL = another.getMessageHTL;
 		this.getBestDistance = another.getBestDistance;
-		this.allPeersVisited = another.allPeersVisited;
 	}
 
 	@Override

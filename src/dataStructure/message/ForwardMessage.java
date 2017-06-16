@@ -1,5 +1,9 @@
 package dataStructure.message;
 
+import java.util.HashSet;
+
+import dataStructure.DarkPeer;
+import protocol.MessageProtocol;
 
 public abstract class ForwardMessage extends Message {
 
@@ -17,8 +21,9 @@ public abstract class ForwardMessage extends Message {
 	 * @param HTL
 	 * @param originalMessageId
 	 */
-	public ForwardMessage(float messageLocationKey, int HTL, double bestDistance, long originalMessageId, int originalHTL) {
-		super(messageLocationKey, originalMessageId, originalHTL);
+	public ForwardMessage(float messageLocationKey, int HTL, double bestDistance, 
+			long originalMessageId, int originalHTL, HashSet<DarkPeer> allPeersVisited) {
+		super(messageLocationKey, originalMessageId, originalHTL, allPeersVisited);
 		this.HTL = HTL;
 		this.bestDistance = bestDistance;
 	}
@@ -49,9 +54,9 @@ public abstract class ForwardMessage extends Message {
 	}
 	
 
-	public boolean isBestDistance(double distance) {
-		System.out.println("distance="+distance+" bestDistance="+bestDistance);
+	public boolean isBestDistance(DarkPeer sender, double distance) {
 		if(distance < bestDistance){
+			MessageProtocol.printPeerAction(sender, this, "RESET HTL!");
 			//update best distance
 			bestDistance = distance;
 			//reset HTL

@@ -10,12 +10,10 @@ import protocol.MessageProtocol;
 public class GetMessage extends ForwardMessage {
 	
 	private final Stack<DarkPeer> routingPath;
-	private final HashSet<DarkPeer> allPeersVisited;
 	
 	public GetMessage(float messageLocationKey, int HTL) {
 		super(messageLocationKey, HTL);
 		routingPath = new Stack<DarkPeer>();
-		allPeersVisited = new HashSet<DarkPeer>();
 	}
 	
 	/**
@@ -29,15 +27,13 @@ public class GetMessage extends ForwardMessage {
 	 */
 	public GetMessage(float messageLocationKey, int HTL, double bestDistance, long originalMessageId, int originalHTL, 
 			HashSet<DarkPeer> allPeersVisited, Stack<DarkPeer> routingPath) {
-		super(messageLocationKey, HTL, bestDistance, originalMessageId, originalHTL);
+		super(messageLocationKey, HTL, bestDistance, originalMessageId, originalHTL, allPeersVisited);
 		this.routingPath = routingPath;
-		this.allPeersVisited = allPeersVisited;
 	}
 	
 	public GetMessage(GetMessage another){
 		super(another);
 		routingPath = another.routingPath;
-		allPeersVisited = another.allPeersVisited;
 	}
 
 	@Override
@@ -52,8 +48,8 @@ public class GetMessage extends ForwardMessage {
 		}
 		//if the node doesn't have the searched message...
 		else {
-			if(this.isBestDistance(sender.getDistanceFromLocationKey(this.messageLocationKey)))
-				MessageProtocol.printPeerAction(sender, this, "RESET HTL!");
+			//if this peer is closer than all the previous peer w.r.t. the content key, reset HTL
+			this.isBestDistance(sender, sender.getDistanceFromLocationKey(this.messageLocationKey));
 			//forward the GetMessage to the closest node w.r.t the content key
 			//note that we don't forward the message to nodes that already received this message
 			DarkPeer receiver = ((LinkableProtocol) sender.getProtocol(mp.getLpId()))
