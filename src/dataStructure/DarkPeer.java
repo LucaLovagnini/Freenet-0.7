@@ -2,13 +2,16 @@ package dataStructure;
 
 import java.util.HashSet;
 
+import control.KeysGenerator;
+import dataStructure.message.Message;
 import peersim.core.GeneralNode;
+import protocol.MessageProtocol;
 
 public class DarkPeer extends GeneralNode implements Comparable<DarkPeer> {
 
 	public 	final String 	darkId;
 	private float			locationKey;
-	private HashSet<Double> storedKeys = new HashSet<Double>();
+	private HashSet<Float> storedKeys = new HashSet<Float>();
 
 	public DarkPeer(String prefix)
 	{
@@ -33,17 +36,21 @@ public class DarkPeer extends GeneralNode implements Comparable<DarkPeer> {
 			return -1;
 	}
 	
-	public double getDistanceFromLocationKey(double locationKey)
+	public float getDistanceFromLocationKey(float locationKey)
 	{
-		final double dist = Math.abs(this.locationKey - locationKey);
+		final float dist = Math.abs(this.locationKey - locationKey);
 		return Math.min(dist, 1 - dist);
 	}
 	
-	public void storeKey(double locationKey){
+	public void storeKey(Message message, DarkPeer sender){
+		float locationKey = message.messageLocationKey;
 		storedKeys.add(locationKey);
+		//notify the key generator that the key has been stored somewhere (so we can do get operation on it)
+		KeysGenerator.addStoredKey(locationKey);
+		MessageProtocol.printPeerAction(sender, message, "STORED HERE!");
 	}
 	
-	public boolean containsKey(double locationKey)
+	public boolean containsKey(float locationKey)
 	{
 		return storedKeys.contains(locationKey);
 	}
@@ -56,11 +63,11 @@ public class DarkPeer extends GeneralNode implements Comparable<DarkPeer> {
 		this.locationKey = locationKey;
 	}
 	
-	public HashSet<Double> getStoredKeys() {
+	public HashSet<Float> getStoredKeys() {
 		return storedKeys;
 	}
 
-	public void setStoredKeys(HashSet<Double> storedKeys) {
+	public void setStoredKeys(HashSet<Float> storedKeys) {
 		this.storedKeys = storedKeys;
 	}
 

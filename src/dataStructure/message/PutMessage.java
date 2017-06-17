@@ -1,6 +1,5 @@
 package dataStructure.message;
 
-import control.KeysGenerator;
 import dataStructure.DarkPeer;
 import protocol.LinkableProtocol;
 import protocol.MessageProtocol;
@@ -26,55 +25,57 @@ public class PutMessage extends ForwardMessage {
 
 	@Override
 	public void doMessageAction(DarkPeer sender, MessageProtocol mp) {
-		//add this node to the list of visited nodes
-		//debugging check: a node can't receive the same get message twice
+		// Add this node to the list of visited nodes
+		// Case where this node has already seen this message: 
+		//     C
+		// A /   \ D 
+		//   \ B /
+		// A stores the key and forwards to B and C, which both forward to D, so D receives this message twice
+		// Simply ignore it!
 		if(!allPeersVisited.add(sender))
-			throw new RuntimeException("message "+this+" already seen "+sender.getID());
+			return;
+		// A node can't store a key of a message that he has never seen before
 		if(sender.containsKey(this.messageLocationKey))
 			throw new RuntimeException(sender.getID()+" already contains key "+this.messageLocationKey);
+		//check if sender is closer w.r.t. the content key than ANY of his neighbors
+		boolean isClosest = ((LinkableProtocol) sender.getProtocol(mp.getLpId())).isClosestThanNeighbors(sender, this);
+		//store content in this node if sender is closer to the content key w.r.t. ANY of his neighbors
+		if(isClosest)
+			sender.storeKey(this, sender);		
 		// get the Linkable protocol of the sender FPeer to access to its neighbors
-		// find the closest peer w.r.t. the content key which didn't receive this message already
-		// this is useful when this put message is part of a replication process
+		// find the closest peer to the content key which didn't receive this message already
 		DarkPeer receiver = ((LinkableProtocol) sender.getProtocol(mp.getLpId()))
 				.getClosestNeighbor(this.messageLocationKey, allPeersVisited);
-		// special case: A generates PUT, forwards to B (which only neighbor is A), but they swap before B receives the message
-		// conclusion: B want to forward PUT to A, but he can't since he already visited it
-		// second special case: during replication, A receives PUT message, but all his neighbors already received it
-		if(receiver == null){
+		//if ALL the neighbors received this message already...
+		if(receiver == null)
 			MessageProtocol.printPeerAction(sender, this, "NO NEIGHBORS AVAILABLE!");
-			return;
+		//if there is at least one neighbor which didn't receive this message yet...
+		else{
+			//if this node is the closest one w.r.t. all the previous key, then HTL is reset
+			this.isBestDistance(sender, sender.getDistanceFromLocationKey(this.messageLocationKey));
+			//if this node is closer to the key w.r.t. all his neighbors, then forward to all its neighbors
+			if(isClosest)
+				forwardToEverybody(sender, mp);
+			//otherwise, if:
+			//1. There are still hops
+			//2. The closest node w.r.t. the message key which didn't receive the message yet is closer than this node
+			//Then forward this message to it
+			else if(this.getHTL()>0 && !this.isCloserThan(sender.getLocationKey(), receiver.getLocationKey()))
+				mp.sendForwardMessage(sender, receiver, this);
+			else
+				MessageProtocol.printPeerAction(sender, this, "DYING!");
 		}
-		//if this node is the closest one w.r.t. all the previous key, then HTL is reset
-		this.isBestDistance(sender, sender.getDistanceFromLocationKey(this.messageLocationKey));
-		//if sender is closer than the closest neigbor w.r.t the message key
-		if(this.isCloserThan(sender.getLocationKey(), receiver.getLocationKey())){
-			//then store the message location key
-			sender.storeKey(this.messageLocationKey);
-			//notify the key generator that the key has been stored somewhere (so we can do get operation on it)
-			KeysGenerator.addStoredKey(this.messageLocationKey);
-			MessageProtocol.printPeerAction(sender, this, "STORED HERE!");
-			forwardToEverybody(sender, mp);
-		}
-		//if this node is the closest one w.r.t. all the previous key, then HTL is reset (and is > 0 for sure)
-		//otherwise, check if HTL>0 and in that case forward the message
-		else if(this.getHTL()>0){
-			mp.sendForwardMessage(sender, receiver, this);
-
-		}
-		else
-			MessageProtocol.printPeerAction(sender, this, "DYING!");
 	}
 
 	private void forwardToEverybody(DarkPeer sender, MessageProtocol mp) {
 		//notice that we already reset HTL (if it was the case)
-		//when we store a key in a node, it's ALWAYS the closest node w.r.t. all the other peers 
 		LinkableProtocol lp = (LinkableProtocol) sender.getProtocol(mp.getLpId());
-		//for each neighbor
+		//for each neighbor...
 		for(DarkPeer darkNeighbor : lp.getNeighborTree()){
-			//forward Put only if the neighbor didn't receive the message already
+			//forward this Put only if the neighbor didn't receive the message already
 			if(!this.allPeersVisited.contains(darkNeighbor)){
-				//TODO: check if it's ok to forward this or we have to do a "new"
-				mp.sendForwardMessage(sender, darkNeighbor, this);
+				PutMessage forwardedPut = (PutMessage) this.clone();
+				mp.sendForwardMessage(sender, darkNeighbor, forwardedPut);
 			}
 		}
 		

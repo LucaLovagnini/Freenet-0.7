@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import dataStructure.DarkPeer;
+import dataStructure.message.Message;
 import peersim.core.Linkable;
 import peersim.core.Node;
 import peersim.core.Protocol;
@@ -84,6 +85,26 @@ public class LinkableProtocol implements Linkable, Protocol {
 	public void onKill() {
 		// TODO Auto-generated method stub
 
+	}
+	
+	public boolean isClosestThanNeighbors(DarkPeer sender, Message message){
+		DarkPeer keyPeer = new DarkPeer(null, null, message.messageLocationKey);
+		// get the set of all FPeers with location key strictly less than the passed location key
+		NavigableSet<DarkPeer> smallerDarkPeers =  darkNeighbors.headSet(keyPeer, false);
+		Iterator<DarkPeer> smallerIt = smallerDarkPeers.descendingIterator();
+		//if there is a peer with a smaller key w.r.t. the message key...
+		//and that peer is closer to the message key w.r.t. sender, then return false
+		if(smallerIt.hasNext() && !message.isCloserThan(sender.getLocationKey(), smallerIt.next().getLocationKey()))
+			return false;
+		// get the set of all FPeers with location key strictly greater than the passed location key
+		NavigableSet<DarkPeer> biggerDarkPeers =  darkNeighbors.tailSet(keyPeer, false);
+		Iterator<DarkPeer> biggerIt = biggerDarkPeers.iterator();
+		//if there is a peer with a bigger key w.r.t. the message key...
+		//and that peer is closer to the message key w.r.t. sender, then return false
+		if(biggerIt.hasNext() && !message.isCloserThan(sender.getLocationKey(), biggerIt.next().getLocationKey()))
+			return false;
+		//otherwise it means that sender is the closer w.r.t. the message than all his neighbors
+		return true;
 	}
 		
 	public DarkPeer getClosestNeighbor(float locationKey, HashSet<DarkPeer> allPeersVisited){

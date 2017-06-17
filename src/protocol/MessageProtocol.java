@@ -126,32 +126,14 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		final LinkableProtocol lp = (LinkableProtocol) darkPeer.getProtocol(lpId);
 		
 		Message message = null;
-		//generate get message
-		if(doGet()){
-			float getContentKey = KeysGenerator.getContentKeyForGet();
-			if(getContentKey != -1){
-				message = new GetMessage(KeysGenerator.getContentKeyForGet(), HTL);
-				printPeerAction(darkPeer, message, "GET GENERATED!");
-			}
-			else
-				printPeerAction(darkPeer, "doing a get message, but no key has been stored yet!");
-		}
+		
 		//generate put message
-		else{
+		if(darkPeer.darkId.equals("a")){
 			message = new PutMessage(KeysGenerator.getNextContentKey(), HTL);
 			printPeerAction(darkPeer, message, "PUT GENERATED!");
 		}
 		if(message != null)
 			message.doMessageAction(darkPeer, this);
-		
-		final long time = CDState.getTime();
-		//check if we have to swap location key
-		if(time %swapFreq == 0){
-			//randomly select a neighbor
-			final int peerToSwapIndex = (new Random(System.nanoTime())).nextInt(lp.degree());
-			DarkPeer peerToSwap = (DarkPeer) lp.getNeighbor(peerToSwapIndex);
-			tryToSwap(darkPeer, peerToSwap);
-		}
 
 	}
 	
@@ -223,7 +205,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 			B.setLocationKey(ak);
 			
 			//swap stored keys
-			HashSet<Double> aStoredKeys = A.getStoredKeys();
+			HashSet<Float> aStoredKeys = A.getStoredKeys();
 			A.setStoredKeys(B.getStoredKeys());
 			B.setStoredKeys(aStoredKeys);
 			

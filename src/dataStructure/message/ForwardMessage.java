@@ -12,7 +12,7 @@ public abstract class ForwardMessage extends Message {
 	//notice that only forward messages have a HTL
 	private int HTL;
 	//closest location w.r.t. messageLocationKey met up to now
-	private double bestDistance = 1;
+	private double bestDistance;
 
 	/**
 	 * Used when this forward message is created as response to a {@code BackwardMessage}.
@@ -36,11 +36,13 @@ public abstract class ForwardMessage extends Message {
 	public ForwardMessage(float messageLocationKey, int HTL) {
 		super(messageLocationKey, HTL);
 		this.HTL = HTL;
-		// TODO Auto-generated constructor stub
+		this.bestDistance = 1;
 	}
 	
 	public ForwardMessage(ForwardMessage another){
 		super(another);
+		this.HTL = another.HTL;
+		this.bestDistance = another.bestDistance;
 	}
 	
 	public int decreaseHTL() {
