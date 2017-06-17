@@ -6,6 +6,8 @@ import protocol.MessageProtocol;
 
 public class PutMessage extends ForwardMessage {
 
+	private int replicationFactor = 3;
+	
 	public PutMessage(DarkPeer sender, float messageLocationKey, int HTL) {
 		super(sender, messageLocationKey, HTL);
 	}
@@ -16,6 +18,7 @@ public class PutMessage extends ForwardMessage {
 	 */
 	public PutMessage(PutMessage another){
 		super(another);
+		this.replicationFactor = another.replicationFactor;
 	}
 	
 	@Override
@@ -32,8 +35,10 @@ public class PutMessage extends ForwardMessage {
 		//check if sender is closer w.r.t. the content key than ANY of his neighbors
 		boolean isClosest = ((LinkableProtocol) sender.getProtocol(mp.getLpId())).isClosestThanNeighbors(sender, this);
 		//store content in this node if sender is closer to the content key w.r.t. ANY of his neighbors
-		if(isClosest)
-			sender.storeKey(this, sender);		
+		if(isClosest){
+			sender.storeKey(this, sender);
+			replicationFactor--;
+		}
 		// get the Linkable protocol of the sender FPeer to access to its neighbors
 		// find the closest peer to the content key which didn't receive this message already
 		DarkPeer receiver = ((LinkableProtocol) sender.getProtocol(mp.getLpId()))
@@ -46,7 +51,7 @@ public class PutMessage extends ForwardMessage {
 			//if this node is the closest one w.r.t. all the previous key, then HTL is reset
 			this.isBestDistance(sender, sender.getDistanceFromLocationKey(this.messageLocationKey));
 			//if there are still hops available...
-			if(this.getHTL()>0){
+			if(this.getHTL()>0 && replicationFactor>0){
 				//if this node is closer to the key w.r.t. all his neighbors, then forward to all its neighbors
 				if(isClosest)
 					forwardToEverybody(sender, mp);

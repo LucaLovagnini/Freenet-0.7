@@ -26,11 +26,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	// protocol identifier of the used Linkable protocol
 	private int lpId;
 	private int HTL;
-	private int HTLSwap;
-	private int topK;
 	private int swapFreq;
-	private int cacheInter;
-	private int cacheFreq;
 	private double getProb;
 	public static boolean putGenerated = false;
 	public static boolean getGenerated = false;
@@ -40,12 +36,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		this.urtId		= Configuration.getPid(prefix + ".urtId");
 		this.lpId		= Configuration.getPid(prefix + ".lpId");
 		this.HTL		= Configuration.getInt(prefix + ".HTL");
-		this.HTLSwap	= Configuration.getInt(prefix + ".HTLSwap");
-		this.topK		= Configuration.getInt(prefix + ".topK");
 		this.swapFreq	= Configuration.getInt(prefix + ".swapFreq");
-		this.cacheInter	= Configuration.getInt(prefix + ".cacheInter");
-		this.cacheFreq	= Configuration.getInt(prefix + ".cacheFreq");
-		this.getProb	= Configuration.getDouble(prefix + ".getProb");
 	}
 	
 	@Override
@@ -61,15 +52,11 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 			System.out.println("Error while cloning LinkableProtocol: "+e.getMessage());
 			return null;
 		}
-		mp.cacheFreq = this.cacheFreq;
-		mp.cacheInter = this.cacheInter;
 		mp.getProb = this.getProb;
 		mp.HTL = this.HTL;
-		mp.HTLSwap = this.HTLSwap;
 		mp.lpId = this.lpId;
 		mp.mpId = this.mpId;
 		mp.swapFreq = this.swapFreq;
-		mp.topK = this.topK;
 		return mp;
 	}
 	
