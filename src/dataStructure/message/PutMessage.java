@@ -6,8 +6,11 @@ import protocol.MessageProtocol;
 
 public class PutMessage extends ForwardMessage {
 
-	public PutMessage(float messageLocationKey, int HTL) {
+	public PutMessage(DarkPeer sender, float messageLocationKey, int HTL) {
 		super(messageLocationKey, HTL);
+		//visited peers are added in addPeerVisited
+		//since this peer doesn't receive the message (but sends it), we add it now
+		allPeersVisited.add(sender);
 	}
 	
 	/**
@@ -25,15 +28,6 @@ public class PutMessage extends ForwardMessage {
 
 	@Override
 	public void doMessageAction(DarkPeer sender, MessageProtocol mp) {
-		// Add this node to the list of visited nodes
-		// Case where this node has already seen this message: 
-		//     C
-		// A /   \ D 
-		//   \ B /
-		// A stores the key and forwards to B and C, which both forward to D, so D receives this message twice
-		// Simply ignore it!
-		if(!allPeersVisited.add(sender))
-			return;
 		// A node can't store a key of a message that he has never seen before
 		if(sender.containsKey(this.messageLocationKey))
 			throw new RuntimeException(sender.getID()+" already contains key "+this.messageLocationKey);
@@ -53,15 +47,18 @@ public class PutMessage extends ForwardMessage {
 		else{
 			//if this node is the closest one w.r.t. all the previous key, then HTL is reset
 			this.isBestDistance(sender, sender.getDistanceFromLocationKey(this.messageLocationKey));
-			//if this node is closer to the key w.r.t. all his neighbors, then forward to all its neighbors
-			if(isClosest)
-				forwardToEverybody(sender, mp);
-			//otherwise, if:
-			//1. There are still hops
-			//2. The closest node w.r.t. the message key which didn't receive the message yet is closer than this node
-			//Then forward this message to it
-			else if(this.getHTL()>0 && !this.isCloserThan(sender.getLocationKey(), receiver.getLocationKey()))
-				mp.sendForwardMessage(sender, receiver, this);
+			//if there are still hops available...
+			if(this.getHTL()>0){
+				//if this node is closer to the key w.r.t. all his neighbors, then forward to all its neighbors
+				if(isClosest)
+					forwardToEverybody(sender, mp);
+				//otherwise, if the closest node w.r.t. the message key which didn't receive the message yet is closer than this node
+				//Then forward this message to it
+				else if(!this.isCloserThan(sender.getLocationKey(), receiver.getLocationKey()))
+					mp.sendForwardMessage(sender, receiver, this);
+				else
+					MessageProtocol.printPeerAction(sender, this, receiver.getID()+" isn't closer!");
+			}
 			else
 				MessageProtocol.printPeerAction(sender, this, "DYING!");
 		}

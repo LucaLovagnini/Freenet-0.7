@@ -93,6 +93,9 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	
 	public void sendForwardMessage(DarkPeer sender, DarkPeer receiver, ForwardMessage message){
 		printPeerAction(sender, message, "to "+receiver.getID());
+		//add this node to the list of visited nodes
+		//debugging check: a node can't receive the same get message twice
+		message.addPeerVisited(receiver);
 		//decrease hops-to-live
 		message.decreaseHTL();
 		//get transport protocol
@@ -126,15 +129,22 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		final LinkableProtocol lp = (LinkableProtocol) darkPeer.getProtocol(lpId);
 		
 		Message message = null;
-		
-		//generate put message
+		//generate get message
 		if(darkPeer.darkId.equals("a")){
-			message = new PutMessage(KeysGenerator.getNextContentKey(), HTL);
+			message = new PutMessage(darkPeer, KeysGenerator.getNextContentKey(), HTL);
 			printPeerAction(darkPeer, message, "PUT GENERATED!");
 		}
 		if(message != null)
 			message.doMessageAction(darkPeer, this);
-
+		
+		final long time = CDState.getTime();
+		//check if we have to swap location key
+		if(time %swapFreq == 0){
+			//randomly select a neighbor
+			final int peerToSwapIndex = (new Random(System.nanoTime())).nextInt(lp.degree());
+			DarkPeer peerToSwap = (DarkPeer) lp.getNeighbor(peerToSwapIndex);
+//			tryToSwap(darkPeer, peerToSwap);
+		}	
 	}
 	
 	private void addToNeighbors(DarkPeer toAdd, LinkableProtocol toAddLp){

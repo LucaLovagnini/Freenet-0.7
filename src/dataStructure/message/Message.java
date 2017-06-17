@@ -69,6 +69,12 @@ public abstract class Message implements Cloneable {
 		return (Math.min(dist1, 1 - dist1) <= Math.min(dist2, 1 - dist2));
 	}
 	
+	public void addPeerVisited(DarkPeer receiver){
+		//since allPeersVisited is shared and since all messages can be received by any peer only once
+		if(!allPeersVisited.add(receiver))
+			throw new RuntimeException("message "+this+" already seen "+receiver.getID());		
+	}
+	
 	public abstract void doMessageAction(DarkPeer sender, MessageProtocol mp);
 	
 	public abstract Object clone(); 
