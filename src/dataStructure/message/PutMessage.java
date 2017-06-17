@@ -7,10 +7,7 @@ import protocol.MessageProtocol;
 public class PutMessage extends ForwardMessage {
 
 	public PutMessage(DarkPeer sender, float messageLocationKey, int HTL) {
-		super(messageLocationKey, HTL);
-		//visited peers are added in addPeerVisited
-		//since this peer doesn't receive the message (but sends it), we add it now
-		allPeersVisited.add(sender);
+		super(sender, messageLocationKey, HTL);
 	}
 	
 	/**
@@ -28,9 +25,10 @@ public class PutMessage extends ForwardMessage {
 
 	@Override
 	public void doMessageAction(DarkPeer sender, MessageProtocol mp) {
-		// A node can't store a key of a message that he has never seen before
+		//If a node receive a PutMessage of a key that he already stored, it means that he swapped with the key owner
+		//Example: A stores key, forward to every neighbor (B included), B swaps with A -> B has key
 		if(sender.containsKey(this.messageLocationKey))
-			throw new RuntimeException(sender.getID()+" already contains key "+this.messageLocationKey);
+			return;
 		//check if sender is closer w.r.t. the content key than ANY of his neighbors
 		boolean isClosest = ((LinkableProtocol) sender.getProtocol(mp.getLpId())).isClosestThanNeighbors(sender, this);
 		//store content in this node if sender is closer to the content key w.r.t. ANY of his neighbors

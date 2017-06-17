@@ -33,8 +33,11 @@ public abstract class ForwardMessage extends Message {
 	 * @param messageLocationKey
 	 * @param HTL
 	 */
-	public ForwardMessage(float messageLocationKey, int HTL) {
+	public ForwardMessage(DarkPeer sender, float messageLocationKey, int HTL) {
 		super(messageLocationKey, HTL);
+		//visited peers are added in addPeerVisited
+		//since this peer doesn't receive the message (but sends it), we add it now
+		this.allPeersVisited.add(sender);
 		this.HTL = HTL;
 		this.bestDistance = 1;
 	}

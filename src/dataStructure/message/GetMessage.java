@@ -11,8 +11,8 @@ public class GetMessage extends ForwardMessage {
 	
 	private final Stack<DarkPeer> routingPath;
 	
-	public GetMessage(float messageLocationKey, int HTL) {
-		super(messageLocationKey, HTL);
+	public GetMessage(DarkPeer sender, float messageLocationKey, int HTL) {
+		super(sender, messageLocationKey, HTL);
 		routingPath = new Stack<DarkPeer>();
 	}
 	

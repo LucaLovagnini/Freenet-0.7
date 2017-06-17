@@ -74,15 +74,15 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	}
 	
 	public static void printPeerAction(DarkPeer peer, Message message){
-		System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" locationKey="+peer.getLocationKey()+" "+message.toString());
+		//System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" locationKey="+peer.getLocationKey()+" "+message.toString());
 	}
 	
 	public static void printPeerAction(DarkPeer peer, Message message, String bonus){
-		System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" locationKey="+peer.getLocationKey()+" "+message.toString()+" "+bonus);		
+		//System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" locationKey="+peer.getLocationKey()+" "+message.toString()+" "+bonus);		
 	}
 	
 	public static void printPeerAction(DarkPeer peer, String bonus){
-		System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" locationKey="+peer.getLocationKey()+" "+bonus);		
+		//System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" locationKey="+peer.getLocationKey()+" "+bonus);		
 	}
 	
 	private boolean doGet(){
@@ -127,10 +127,23 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	public void nextCycle(Node peer, int pid) {
 		final DarkPeer darkPeer = (DarkPeer) peer;
 		final LinkableProtocol lp = (LinkableProtocol) darkPeer.getProtocol(lpId);
+		if(darkPeer.getID()==0)
+			System.out.println("time="+CDState.getTime());
+
 		
 		Message message = null;
 		//generate get message
-		if(darkPeer.darkId.equals("a")){
+		if(doGet()){
+			float getContentKey = KeysGenerator.getContentKeyForGet();
+			if(getContentKey != -1){
+				message = new GetMessage(darkPeer, KeysGenerator.getContentKeyForGet(), HTL);
+				printPeerAction(darkPeer, message, "GET GENERATED!");
+			}
+			else
+				printPeerAction(darkPeer, "doing a get message, but no key has been stored yet!");
+		}
+		//generate put message
+		else{
 			message = new PutMessage(darkPeer, KeysGenerator.getNextContentKey(), HTL);
 			printPeerAction(darkPeer, message, "PUT GENERATED!");
 		}
@@ -143,8 +156,8 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 			//randomly select a neighbor
 			final int peerToSwapIndex = (new Random(System.nanoTime())).nextInt(lp.degree());
 			DarkPeer peerToSwap = (DarkPeer) lp.getNeighbor(peerToSwapIndex);
-//			tryToSwap(darkPeer, peerToSwap);
-		}	
+			tryToSwap(darkPeer, peerToSwap);
+		}
 	}
 	
 	private void addToNeighbors(DarkPeer toAdd, LinkableProtocol toAddLp){
