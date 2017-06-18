@@ -19,6 +19,7 @@ public class Statistics implements peersim.core.Control
 	private final String network;
 	// if false, don't do statistics
 	private final boolean doStatistics;
+	int [][] distMatrix;
 
 	public Statistics(String prefix) 
 	{
@@ -91,16 +92,18 @@ public class Statistics implements peersim.core.Control
 			}
 	}
 
-	private int[][] shortestPath(int networkSize)
+	private void shortestPath(int networkSize)
 	{
 		// distMatrix[i][j] = distance between i-th and j-th dark peer
-		int [][] distMatrix = new int [networkSize][networkSize];
+		distMatrix = new int [networkSize][networkSize];
 
+		int superDistance = 999999;
+		
 		// distance between a node and itself = 0
 		// otherwise, initialize it with biggest integer value
 		for (int k = 0; k < networkSize; k++)
 			for (int i = 0; i < networkSize; i++)
-				distMatrix[k][i] = ((k == i) ? 0 : Integer.MAX_VALUE);
+				distMatrix[k][i] = ((k == i) ? 0 : superDistance);
 
 		// distance between the i-th node and one of its neighbors = 1
 		for (int i = 0; i < networkSize; i++)
@@ -117,7 +120,6 @@ public class Statistics implements peersim.core.Control
 				for (int j = 0; j < networkSize; j++)
 					if (distMatrix[i][j] > (distMatrix[i][k] + distMatrix[k][j]))
 						distMatrix[i][j] = (distMatrix[i][k] + distMatrix[k][j]);
-		return distMatrix;
 	}
 	
 	private void computeDiameter(PrintWriter statisticsFile) 
@@ -125,21 +127,13 @@ public class Statistics implements peersim.core.Control
 		final int networkSize = Network.size();
 
 		//given the set of the shortest path between pair of nodes, this represent the longest path between them
-		int longestShortestPath = -1;
-				
-		// compute shortest paths
-		int [][] distMatrix = shortestPath(networkSize);
-		
+		int longestShortestPath = -1;		
 
 		// for each pair of DarkPeers
 		for (int i = 0; i < networkSize; i++)
 			for (int j = 0; j < networkSize; j++)		
 				if (distMatrix[i][j] > longestShortestPath)
 					longestShortestPath = distMatrix[i][j];
-		
-		//save memory by deleting the distMatrix
-		distMatrix = null;
-		System.gc();
 	
 		//write diameter to file
 		statisticsFile.println("Diameter"+ "\t" + longestShortestPath);		
@@ -149,15 +143,10 @@ public class Statistics implements peersim.core.Control
 	{
 		final int networkSize = Network.size();
 		double sumShPathsLength = 0.0;
-		// computes all shortest paths between each pair of nodes of the network using Floyd-Warshall algorithm
-		int [][] distMatrix = shortestPath(networkSize);
 		// sum the shortest paths length between each pair of nodes of the network
 		for (int i = 0; i < networkSize; i++)
 			for (int j = 0; j < networkSize; j++)
 				sumShPathsLength += distMatrix[i][j];
-		//save memory by deleting the distMatrix
-		distMatrix = null;
-		System.gc();		
 		// compute average shortest paths length
 		double avgShPathLength = sumShPathsLength / new Double(Network.size() * Network.size());
 		//write it to file
@@ -173,6 +162,8 @@ public class Statistics implements peersim.core.Control
 			try 
 			{
 				System.out.println("Doing network statistics...");
+				System.out.println("Computing shortest paths...");
+				shortestPath(Network.size());
 				statisticsFile = new PrintWriter(new BufferedWriter(new FileWriter("statistics" + this.network + ".csv", false)));
 				final int networkSize = Network.size();
 				statisticsFile.println("NetworkSize"+ "\t" + networkSize);
@@ -181,6 +172,9 @@ public class Statistics implements peersim.core.Control
 				computeDegreePerNode(statisticsFile); 
 				computeClusterCoefficient(statisticsFile);
 				System.out.println("Network statistics done!");
+				//save memory by deleting the distMatrix
+				distMatrix = null;
+				System.gc();
 			}
 			catch (IOException e)
 			{

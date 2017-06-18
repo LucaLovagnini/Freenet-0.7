@@ -38,7 +38,7 @@ public class PutMessage extends ForwardMessage {
 		//store content in this node if sender is closer to the content key w.r.t. ANY of his neighbors
 		if(isClosest){
 			sender.storeKey(this, sender);
-			MessageProtocol.writeStatistics(this, true);
+			//MessageProtocol.writeStatistics(this, true);
 			replicationFactor--;
 		}
 		// get the Linkable protocol of the sender FPeer to access to its neighbors
