@@ -18,6 +18,7 @@ import dataStructure.message.PutMessage;
 import peersim.cdsim.CDProtocol;
 import peersim.cdsim.CDState;
 import peersim.config.Configuration;
+import peersim.core.Network;
 import peersim.core.Node;
 import peersim.edsim.EDProtocol;
 import peersim.transport.UniformRandomTransport;
@@ -171,11 +172,16 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		
 		final long time = CDState.getTime();
 		//check if we have to swap location key
-		if(time %swapFreq == 0){
-			//randomly select a neighbor
-			final int peerToSwapIndex = (new Random(System.nanoTime())).nextInt(lp.degree());
-			DarkPeer peerToSwap = (DarkPeer) lp.getNeighbor(peerToSwapIndex);
-			tryToSwap(darkPeer, peerToSwap);
+		if(darkPeer.getID()== 0 && time %swapFreq == 0){
+			for(int i=0; i<Network.size(); i++){
+				DarkPeer swappingPeer = (DarkPeer) Network.get(i);
+				int peerToSwapIndex;
+				do
+					peerToSwapIndex = (new Random(System.nanoTime())).nextInt(Network.size());
+				while(peerToSwapIndex == i);
+				DarkPeer peerToSwap = (DarkPeer) Network.get(peerToSwapIndex);
+				tryToSwap(swappingPeer, peerToSwap);
+			}
 		}
 	}
 	
@@ -189,9 +195,10 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	private void removeFromNeighbors(DarkPeer toRemove, DarkPeer toAvoid, LinkableProtocol toRemoveLp){
 		for(DarkPeer darkNeighbor : toRemoveLp.getNeighborTree()){
 			//if darkNeighbor is toAvoid, skip it
-			if(darkNeighbor != toAvoid)
+			if(darkNeighbor != toAvoid){
 				if(!((LinkableProtocol) darkNeighbor.getProtocol(lpId)).removeNeighbor(toRemove))
 					throw new RuntimeException(darkNeighbor.getID()+" is not a neighbor of "+toRemove.getID());
+			}
 		}
 	}
 
