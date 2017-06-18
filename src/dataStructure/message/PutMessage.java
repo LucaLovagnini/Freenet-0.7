@@ -6,7 +6,7 @@ import protocol.MessageProtocol;
 
 public class PutMessage extends ForwardMessage {
 
-	private int replicationFactor = 3;
+	private int replicationFactor = 1;
 	
 	public PutMessage(DarkPeer sender, float messageLocationKey, int HTL) {
 		super(sender, messageLocationKey, HTL);

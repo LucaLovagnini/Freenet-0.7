@@ -28,6 +28,11 @@ public class GetNotFoundMessage extends BackwardMessage {
 		this.getMessageHTL = another.getMessageHTL;
 		this.getBestDistance = another.getBestDistance;
 	}
+	
+	@Override
+	public Object clone() {
+		return new GetNotFoundMessage(this);
+	}
 
 	@Override
 	public void doMessageAction(DarkPeer sender, MessageProtocol mp) {
@@ -63,11 +68,5 @@ public class GetNotFoundMessage extends BackwardMessage {
 			mp.sendForwardMessage(sender, receiver, message);
 		}
 	}
-
-	@Override
-	public Object clone() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
+	
 }

@@ -37,10 +37,18 @@ public class GetMessage extends ForwardMessage {
 	}
 
 	@Override
+	public Object clone() {
+		return new GetMessage(this);
+	}
+	
+	@Override
 	public void doMessageAction(DarkPeer sender, MessageProtocol mp) {
 		//if the node has the searched content
 		if(sender.containsKey(this.messageLocationKey)){
 			MessageProtocol.printPeerAction(sender, this, "FOUND HERE!");
+			GetOkMessage message = new GetOkMessage(messageLocationKey, allPeersVisited, 
+					routingPath, originalMessageId, originalHTL, this.getHTL(), this.getBestDistance());
+			mp.sendBackwardMessage(sender, message);
 		}
 		//if the node doesn't have the searched message...
 		else {
@@ -72,10 +80,5 @@ public class GetMessage extends ForwardMessage {
 		}
 	}
 	
-	@Override
-	public Object clone() {
-		return new GetMessage(this);
-	}
-
 
 }

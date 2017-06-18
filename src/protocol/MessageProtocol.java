@@ -28,8 +28,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	private int HTL;
 	private int swapFreq;
 	private double getProb;
-	public static boolean putGenerated = false;
-	public static boolean getGenerated = false;
+	private static boolean verbose;
 		
 	public MessageProtocol(String prefix){
 		this.mpId		= Configuration.getPid(prefix + ".mpId");
@@ -37,6 +36,8 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		this.lpId		= Configuration.getPid(prefix + ".lpId");
 		this.HTL		= Configuration.getInt(prefix + ".HTL");
 		this.swapFreq	= Configuration.getInt(prefix + ".swapFreq");
+		this.getProb	= Configuration.getDouble(prefix + ".getProb");
+		MessageProtocol.verbose	= Configuration.getBoolean(prefix+".verbose");
 	}
 	
 	@Override
@@ -61,15 +62,18 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	}
 	
 	public static void printPeerAction(DarkPeer peer, Message message){
-		//System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" locationKey="+peer.getLocationKey()+" "+message.toString());
+		if(verbose)
+			System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" locationKey="+peer.getLocationKey()+" "+message.toString());
 	}
 	
 	public static void printPeerAction(DarkPeer peer, Message message, String bonus){
-		//System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" locationKey="+peer.getLocationKey()+" "+message.toString()+" "+bonus);		
+		if(verbose)
+			System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" locationKey="+peer.getLocationKey()+" "+message.toString()+" "+bonus);		
 	}
 	
 	public static void printPeerAction(DarkPeer peer, String bonus){
-		//System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" locationKey="+peer.getLocationKey()+" "+bonus);		
+		if(verbose)
+			System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" locationKey="+peer.getLocationKey()+" "+bonus);		
 	}
 	
 	private boolean doGet(){
@@ -114,7 +118,8 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	public void nextCycle(Node peer, int pid) {
 		final DarkPeer darkPeer = (DarkPeer) peer;
 		final LinkableProtocol lp = (LinkableProtocol) darkPeer.getProtocol(lpId);
-		if(darkPeer.getID()==0)
+		//when we don't print anything, we just print time
+		if(darkPeer.getID()==0 && !verbose)
 			System.out.println("time="+CDState.getTime());
 
 		
