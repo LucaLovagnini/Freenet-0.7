@@ -167,9 +167,13 @@ public class Statistics implements peersim.core.Control
 				statisticsFile = new PrintWriter(new BufferedWriter(new FileWriter("statistics" + this.network + ".csv", false)));
 				final int networkSize = Network.size();
 				statisticsFile.println("NetworkSize"+ "\t" + networkSize);
+				System.out.println("Computing diameter...");
 				computeDiameter(statisticsFile);
+				System.out.println("Computing shortest path...");
 				computeAverageShortestPathLength(statisticsFile);
+				System.out.println("Computing degree...");
 				computeDegreePerNode(statisticsFile); 
+				System.out.println("Computing cluster coefficient...");
 				computeClusterCoefficient(statisticsFile);
 				System.out.println("Network statistics done!");
 				//save memory by deleting the distMatrix

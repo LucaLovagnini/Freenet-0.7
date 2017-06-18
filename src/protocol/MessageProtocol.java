@@ -35,6 +35,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	private static int swapFreq;
 	private static int replicationFactor;
 	private static boolean verbose;
+	private static boolean put = false;
 		
 	public MessageProtocol(String prefix){
 		this.mpId							= Configuration.getPid(prefix + ".mpId");
@@ -99,13 +100,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		}
 
 	}
-	
-	private boolean doGet(){
-		final float val = new Random(System.nanoTime()).nextFloat();
-		return (val < getProb) ? true : false;
-
-	}
-	
+		
 	private void sendMessage(DarkPeer sender, DarkPeer receiver, Message message){
 		//get transport protocol
 		UniformRandomTransport urt = (UniformRandomTransport) sender.getProtocol(this.getUrtId());
@@ -144,45 +139,57 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	 **/
 	@Override
 	public void nextCycle(Node peer, int pid) {
-		final DarkPeer darkPeer = (DarkPeer) peer;
-		final LinkableProtocol lp = (LinkableProtocol) darkPeer.getProtocol(lpId);
-		//when we don't print anything, we just print time
-		if(darkPeer.getID()==0 && !verbose)
-			System.out.println("time="+CDState.getTime());
-
 		
-		Message message = null;
-		//generate get message
-		if(doGet()){
-			float getContentKey = KeysGenerator.getContentKeyForGet();
-			if(getContentKey != -1){
-				message = new GetMessage(darkPeer, KeysGenerator.getContentKeyForGet(), HTL);
-				printPeerAction(darkPeer, message, "GET GENERATED!");
+		//at the first cycle, first peer, do 2000 random put operations
+		if(!put){
+			System.out.println("Doing random puts...");
+			for(int i=0; i<2000; i++){
+				int randomNodeIndex = (new Random(System.nanoTime())).nextInt(Network.size());
+				DarkPeer randomPeer = (DarkPeer) Network.get(randomNodeIndex);
+				Message message = new PutMessage(randomPeer, KeysGenerator.getNextContentKey(), HTL, replicationFactor);
+				message.doMessageAction(randomPeer, this);
 			}
-			else
-				printPeerAction(darkPeer, "doing a get message, but no key has been stored yet!");
+			System.out.println("Random puts done!");
+			put = true;
 		}
-		//generate put message
-		else{
-			message = new PutMessage(darkPeer, KeysGenerator.getNextContentKey(), HTL, replicationFactor);
-			printPeerAction(darkPeer, message, "PUT GENERATED!");
-		}
-		if(message != null)
-			message.doMessageAction(darkPeer, this);
+		//when we don't print anything, we just print time
+		if(!verbose && peer.getID() == 0)
+			System.out.println("time="+CDState.getTime());		
 		
 		final long time = CDState.getTime();
 		//check if we have to swap location key
-		if(darkPeer.getID()== 0 && time %swapFreq == 0){
+		if(peer.getID()== 0 && time %swapFreq == 0){
 			for(int i=0; i<Network.size(); i++){
 				DarkPeer swappingPeer = (DarkPeer) Network.get(i);
-				int peerToSwapIndex;
-				do
-					peerToSwapIndex = (new Random(System.nanoTime())).nextInt(Network.size());
-				while(peerToSwapIndex == i);
-				DarkPeer peerToSwap = (DarkPeer) Network.get(peerToSwapIndex);
-				tryToSwap(swappingPeer, peerToSwap);
+				//check if we have to swap location key
+				if(time %swapFreq == 0){
+					//randomly select a neighbor
+					final int peerToSwapIndex = (new Random(System.nanoTime())).nextInt(((LinkableProtocol) swappingPeer.getProtocol(lpId)).degree());
+					DarkPeer peerToSwap = (DarkPeer) ((LinkableProtocol) swappingPeer.getProtocol(lpId)).getNeighbor(peerToSwapIndex);
+					tryToSwap(swappingPeer, peerToSwap);
+				}
 			}
 		}
+
+		
+		if(peer.getID() == 0){
+			for(int i=0; i<2000; i++){
+				int randomNodeIndex = (new Random(System.nanoTime())).nextInt(Network.size());
+				DarkPeer randomPeer = (DarkPeer) Network.get(randomNodeIndex);
+				Message message = null;
+				float getContentKey = KeysGenerator.getContentKeyForGet();
+				if(getContentKey != -1){
+					message = new GetMessage(randomPeer, KeysGenerator.getContentKeyForGet(), HTL);
+					printPeerAction(randomPeer, message, "GET GENERATED!");
+				}
+				else
+					printPeerAction(randomPeer, "doing a get message, but no key has been stored yet!");
+		
+				if(message != null)
+					message.doMessageAction(randomPeer, this);
+			}
+		}
+
 	}
 	
 	private void addToNeighbors(DarkPeer toAdd, LinkableProtocol toAddLp){
