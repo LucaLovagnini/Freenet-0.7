@@ -1,5 +1,9 @@
 package protocol;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Random;
 
@@ -25,19 +29,21 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	private int urtId;
 	// protocol identifier of the used Linkable protocol
 	private int lpId;
-	private int HTL;
-	private int swapFreq;
 	private double getProb;
+	private static int HTL;
+	private static int swapFreq;
+	private static int replicationFactor;
 	private static boolean verbose;
 		
 	public MessageProtocol(String prefix){
-		this.mpId		= Configuration.getPid(prefix + ".mpId");
-		this.urtId		= Configuration.getPid(prefix + ".urtId");
-		this.lpId		= Configuration.getPid(prefix + ".lpId");
-		this.HTL		= Configuration.getInt(prefix + ".HTL");
-		this.swapFreq	= Configuration.getInt(prefix + ".swapFreq");
-		this.getProb	= Configuration.getDouble(prefix + ".getProb");
-		MessageProtocol.verbose	= Configuration.getBoolean(prefix+".verbose");
+		this.mpId							= Configuration.getPid(prefix + ".mpId");
+		this.urtId							= Configuration.getPid(prefix + ".urtId");
+		this.lpId							= Configuration.getPid(prefix + ".lpId");
+		this.getProb						= Configuration.getDouble(prefix + ".getProb");
+		MessageProtocol.replicationFactor	= Configuration.getInt(prefix + ".replicationFactor");
+		MessageProtocol.HTL					= Configuration.getInt(prefix + ".HTL");
+		MessageProtocol.verbose				= Configuration.getBoolean(prefix+".verbose");
+		MessageProtocol.swapFreq						= Configuration.getInt(prefix + ".swapFreq");
 	}
 	
 	@Override
@@ -50,14 +56,12 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		} 
 		catch (final CloneNotSupportedException e)
 		{
-			System.out.println("Error while cloning LinkableProtocol: "+e.getMessage());
+			System.out.println("Error while cloning MessageProtocol: "+e.getMessage());
 			return null;
 		}
 		mp.getProb = this.getProb;
-		mp.HTL = this.HTL;
 		mp.lpId = this.lpId;
 		mp.mpId = this.mpId;
-		mp.swapFreq = this.swapFreq;
 		return mp;
 	}
 	
@@ -76,10 +80,36 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 			System.out.println("Time "+CDState.getTime()+" id="+peer.getID()+" locationKey="+peer.getLocationKey()+" "+bonus);		
 	}
 	
+	public static void writeStatistics(Message message, boolean result){
+		PrintWriter writer = null;
+		try{
+			File statisticsFile = new File("statistics.csv");
+			boolean exists = statisticsFile.exists();
+		    writer = new PrintWriter(new FileOutputStream(statisticsFile, true));
+		    if(!exists)
+		    	writer.println("Time"+"\t"+"MessageType"+"\t"+"HTL"+"\t"+"ReplicationFactor"+"\t"+"SwapFrequency"+"\t"+"Result"+"\t"+"Hops");
+		    writer.println(CDState.getTime()+"\t"+message.getClass()+"\t"+HTL+"\t"+replicationFactor+"\t"+swapFreq+"\t"+result+"\t"+message.getHops());
+		} catch (IOException e) {
+		   e.printStackTrace();
+		}
+		finally{
+			if(writer != null)
+				writer.close();
+		}
+
+	}
+	
 	private boolean doGet(){
 		final float val = new Random(System.nanoTime()).nextFloat();
 		return (val < getProb) ? true : false;
 
+	}
+	
+	private void sendMessage(DarkPeer sender, DarkPeer receiver, Message message){
+		//get transport protocol
+		UniformRandomTransport urt = (UniformRandomTransport) sender.getProtocol(this.getUrtId());
+		//send the message
+		urt.send(sender, receiver, message, this.mpId);
 	}
 	
 	public void sendForwardMessage(DarkPeer sender, DarkPeer receiver, ForwardMessage message){
@@ -87,26 +117,23 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		//add this node to the list of visited nodes
 		//debugging check: a node can't receive the same get message twice
 		message.addPeerVisited(receiver);
+		//increase the total number of hops (used for statistics, not counting backward hops)
+		message.addHop();
 		//decrease hops-to-live
 		message.decreaseHTL();
-		//get transport protocol
-		UniformRandomTransport urt = (UniformRandomTransport) sender.getProtocol(this.getUrtId());
-		//send the message
-		urt.send(sender, receiver, message, this.mpId);
+		sendMessage(sender, receiver, message);
 	}
 	
 	public void sendBackwardMessage(DarkPeer sender, BackwardMessage message){
 		//if the routing path is empty, then it means that this is the destination node
-		if(message.getRoutingPathSize() == 0)
+		if(message.getRoutingPathSize() == 0){
 			printPeerAction(sender, message, "RESULT!");
+			writeStatistics(message, message.successful);
+		}
 		else{
 			//get the next node in the routing path
 			DarkPeer previousPeer = message.popRoutingPath();
-			//get transport protocol
-			UniformRandomTransport urt = (UniformRandomTransport) sender.getProtocol(this.getUrtId());
-			printPeerAction(sender, message, "to "+previousPeer.getID());
-			//send the message
-			urt.send(sender, previousPeer, message, this.mpId);
+			sendMessage(sender, previousPeer, message);
 		}
 	}
 	
@@ -136,7 +163,7 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 		}
 		//generate put message
 		else{
-			message = new PutMessage(darkPeer, KeysGenerator.getNextContentKey(), HTL);
+			message = new PutMessage(darkPeer, KeysGenerator.getNextContentKey(), HTL, replicationFactor);
 			printPeerAction(darkPeer, message, "PUT GENERATED!");
 		}
 		if(message != null)

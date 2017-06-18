@@ -22,8 +22,8 @@ public abstract class ForwardMessage extends Message {
 	 * @param originalMessageId
 	 */
 	public ForwardMessage(float messageLocationKey, int HTL, double bestDistance, 
-			long originalMessageId, int originalHTL, HashSet<DarkPeer> allPeersVisited) {
-		super(messageLocationKey, originalMessageId, originalHTL, allPeersVisited);
+			long originalMessageId, int originalHTL, HashSet<DarkPeer> allPeersVisited, long hops) {
+		super(messageLocationKey, originalMessageId, originalHTL, allPeersVisited, hops);
 		this.HTL = HTL;
 		this.bestDistance = bestDistance;
 	}

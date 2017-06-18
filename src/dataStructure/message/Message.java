@@ -8,6 +8,7 @@ import protocol.MessageProtocol;
 
 public abstract class Message implements Cloneable {
 	private static long nextMessageId = 0;
+	private long hops;
 	//this field is required when this message refers to another message
 	//e.g. : GetNotFoundMessage refers to a GetMessage with id originalMessageId
 	//this is not always required (e.g. PutMessage)
@@ -22,6 +23,7 @@ public abstract class Message implements Cloneable {
 	//ForwardMessage: in case the peer want to reset HTL
 	//BackwardMessage: in case the BackwardMessage generates a ForwardMessage (e.g. GetNotFoundMessage generates GetMessage)
 	public final int originalHTL;
+	
 
 	/**
 	 * Constructor used when this message is generated as answer from another.
@@ -30,11 +32,12 @@ public abstract class Message implements Cloneable {
 	 * @param messageLocationKey content id
 	 * @param originalMessageId id of the original message generated
 	 */
-	public Message(float messageLocationKey, long originalMessageId, int originalHTL, HashSet<DarkPeer> allPeersVisited){
+	public Message(float messageLocationKey, long originalMessageId, int originalHTL, HashSet<DarkPeer> allPeersVisited, long hops){
 		this.originalMessageId = originalMessageId;
 		this.messageLocationKey = messageLocationKey;
 		this.originalHTL = originalHTL;
 		this.allPeersVisited = allPeersVisited;
+		this.hops = hops;
 	}
 	
 	public Message(float messageLocationKey, int HTL){
@@ -42,6 +45,7 @@ public abstract class Message implements Cloneable {
 		this.messageLocationKey = messageLocationKey;
 		this.originalHTL = HTL;
 		this.allPeersVisited = new HashSet<DarkPeer>();
+		this.hops = 0;
 	}
 	
 	/**
@@ -54,6 +58,7 @@ public abstract class Message implements Cloneable {
 		this.messageLocationKey = another.messageLocationKey;
 		this.originalHTL = another.originalHTL;
 		this.allPeersVisited = another.allPeersVisited;
+		this.hops = another.hops;
 	}
 	
 	@Override
@@ -75,7 +80,15 @@ public abstract class Message implements Cloneable {
 			throw new RuntimeException("message "+this+" already seen "+receiver.getID());		
 	}
 	
+	public long getHops(){
+		return hops;
+	}
+	
+	public void addHop() {
+		hops++;
+	} 
+	
 	public abstract void doMessageAction(DarkPeer sender, MessageProtocol mp);
 	
-	public abstract Object clone(); 
+	public abstract Object clone();
 }

@@ -9,8 +9,8 @@ import protocol.MessageProtocol;
 public class GetOkMessage extends BackwardMessage {
 
 	public GetOkMessage(float messageLocationKey, HashSet<DarkPeer> allPeersVisited,
-			Stack<DarkPeer> routingPath, long originalMessageId, int originalHTL, int getMessageHTL, double getBestDistance){
-		super(messageLocationKey, routingPath, originalMessageId, originalHTL, allPeersVisited);
+			Stack<DarkPeer> routingPath, long originalMessageId, int originalHTL, int getMessageHTL, double getBestDistance, long hops){
+		super(messageLocationKey, routingPath, originalMessageId, originalHTL, allPeersVisited, hops, true);
 	}
 
 	public GetOkMessage(GetOkMessage another) {

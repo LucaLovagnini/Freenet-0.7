@@ -26,8 +26,8 @@ public class GetMessage extends ForwardMessage {
 	 * @param originalMessageId the id of the original message, it is used by {@code alreadySeen} in {@code MessageProtocol}
 	 */
 	public GetMessage(float messageLocationKey, int HTL, double bestDistance, long originalMessageId, int originalHTL, 
-			HashSet<DarkPeer> allPeersVisited, Stack<DarkPeer> routingPath) {
-		super(messageLocationKey, HTL, bestDistance, originalMessageId, originalHTL, allPeersVisited);
+			HashSet<DarkPeer> allPeersVisited, Stack<DarkPeer> routingPath, long hops) {
+		super(messageLocationKey, HTL, bestDistance, originalMessageId, originalHTL, allPeersVisited, hops);
 		this.routingPath = routingPath;
 	}
 	
@@ -47,7 +47,7 @@ public class GetMessage extends ForwardMessage {
 		if(sender.containsKey(this.messageLocationKey)){
 			MessageProtocol.printPeerAction(sender, this, "FOUND HERE!");
 			GetOkMessage message = new GetOkMessage(messageLocationKey, allPeersVisited, 
-					routingPath, originalMessageId, originalHTL, this.getHTL(), this.getBestDistance());
+					routingPath, originalMessageId, originalHTL, this.getHTL(), this.getBestDistance(), this.getHops());
 			mp.sendBackwardMessage(sender, message);
 		}
 		//if the node doesn't have the searched message...
@@ -68,7 +68,7 @@ public class GetMessage extends ForwardMessage {
 				else
 					MessageProtocol.printPeerAction(sender, this, "NO NEIGHBORS AVAILABLE!");
 				GetNotFoundMessage message = new GetNotFoundMessage(messageLocationKey, allPeersVisited, 
-						routingPath, originalMessageId, originalHTL, this.getHTL(), this.getBestDistance());
+						routingPath, originalMessageId, originalHTL, this.getHTL(), this.getBestDistance(), this.getHops());
 				mp.sendBackwardMessage(sender, message);
 			}
 			//forward the message only if HTL > 0 AND there is at least a neighbor available

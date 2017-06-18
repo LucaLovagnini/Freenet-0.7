@@ -6,10 +6,11 @@ import protocol.MessageProtocol;
 
 public class PutMessage extends ForwardMessage {
 
-	private int replicationFactor = 1;
+	private int replicationFactor;
 	
-	public PutMessage(DarkPeer sender, float messageLocationKey, int HTL) {
+	public PutMessage(DarkPeer sender, float messageLocationKey, int HTL, int replicationFactor) {
 		super(sender, messageLocationKey, HTL);
+		this.replicationFactor = replicationFactor;
 	}
 	
 	/**
@@ -37,6 +38,7 @@ public class PutMessage extends ForwardMessage {
 		//store content in this node if sender is closer to the content key w.r.t. ANY of his neighbors
 		if(isClosest){
 			sender.storeKey(this, sender);
+			MessageProtocol.writeStatistics(this, true);
 			replicationFactor--;
 		}
 		// get the Linkable protocol of the sender FPeer to access to its neighbors

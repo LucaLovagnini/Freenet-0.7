@@ -17,8 +17,8 @@ public class GetNotFoundMessage extends BackwardMessage {
 	private final double getBestDistance;
 	
 	public GetNotFoundMessage(float messageLocationKey, HashSet<DarkPeer> allPeersVisited,
-			Stack<DarkPeer> routingPath, long originalMessageId, int originalHTL, int getMessageHTL, double getBestDistance){
-		super(messageLocationKey, routingPath, originalMessageId, originalHTL, allPeersVisited);
+			Stack<DarkPeer> routingPath, long originalMessageId, int originalHTL, int getMessageHTL, double getBestDistance, long hops){
+		super(messageLocationKey, routingPath, originalMessageId, originalHTL, allPeersVisited, hops, false);
 		this.getMessageHTL = getMessageHTL;
 		this.getBestDistance = getBestDistance;
 	}
@@ -64,7 +64,7 @@ public class GetNotFoundMessage extends BackwardMessage {
 			//notice that we pass the old routingPath
 			//(i.e. the one who created this GetNotFoundMessage)
 			GetMessage message = new GetMessage(this.messageLocationKey, this.getMessageHTL, this.getBestDistance,
-				 this.originalMessageId, this.originalHTL, this.allPeersVisited, this.routingPath);
+				 this.originalMessageId, this.originalHTL, this.allPeersVisited, this.routingPath, this.getHops());
 			mp.sendForwardMessage(sender, receiver, message);
 		}
 	}
