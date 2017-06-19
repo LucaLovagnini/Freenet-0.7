@@ -87,6 +87,15 @@ public class LinkableProtocol implements Linkable, Protocol {
 
 	}
 	
+	
+	/**
+	 * This method returns true if {@code sender} is closer {@code message} key than any of his neighbors.
+	 * Notice that the {@code TreeSet} structure helps to efficiently find the neighbors with smaller and bigger keys w.r.t. the message key.
+	 * It is used by {@code PutMessage}.
+	 * @param 
+	 * @param 
+	 * @return 
+	 */
 	public boolean isClosestThanNeighbors(DarkPeer sender, Message message){
 		DarkPeer keyPeer = new DarkPeer(null, null, message.messageLocationKey);
 		// get the set of all FPeers with location key strictly less than the passed location key
@@ -107,6 +116,13 @@ public class LinkableProtocol implements Linkable, Protocol {
 		return true;
 	}
 		
+	/**
+	 * This message returns the closest neighbor w.r.t. {@code locationKey} which didn't receive this message yet.
+	 * Notice how {@code TreeSet} helps to efficiently find the set of the closest neighbors w.r.t. {@code locationKey}.
+	 * @param locationKey
+	 * @param allPeersVisited
+	 * @return A reference to the closest neighbor. If such a node doesn't exist, this method returns {@code null}.
+	 */
 	public DarkPeer getClosestNeighbor(float locationKey, HashSet<DarkPeer> allPeersVisited){
 		DarkPeer keyPeer = new DarkPeer(null, null, locationKey);
 		// get the set of all FPeers with location key strictly less than the passed location key

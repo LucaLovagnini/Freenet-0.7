@@ -7,10 +7,12 @@ import protocol.MessageProtocol;
 public class PutMessage extends ForwardMessage {
 
 	private int replicationFactor;
+	private final int originalReplicationFactor;
 	
 	public PutMessage(DarkPeer sender, float messageLocationKey, int HTL, int replicationFactor) {
 		super(sender, messageLocationKey, HTL);
 		this.replicationFactor = replicationFactor;
+		this.originalReplicationFactor = replicationFactor;
 	}
 	
 	/**
@@ -20,6 +22,7 @@ public class PutMessage extends ForwardMessage {
 	public PutMessage(PutMessage another){
 		super(another);
 		this.replicationFactor = another.replicationFactor;
+		this.originalReplicationFactor = another.originalReplicationFactor;
 	}
 	
 	@Override
@@ -32,7 +35,7 @@ public class PutMessage extends ForwardMessage {
 		//If a node receive a PutMessage of a key that he already stored, it means that he swapped with the key owner
 		//Example: A stores key, forward to every neighbor (B included), B swaps with A -> B has key
 		if(sender.containsKey(this.messageLocationKey))
-			if(replicationFactor == 0)
+			if(replicationFactor != originalReplicationFactor)
 				return;
 			else
 				throw new RuntimeException("Node "+sender.getID()+" already contains key "+this.messageLocationKey);
@@ -51,9 +54,6 @@ public class PutMessage extends ForwardMessage {
 		//if ALL the neighbors received this message already...
 		if(receiver == null){
 			MessageProtocol.printPeerAction(sender, this, "NO NEIGHBORS AVAILABLE!");
-			//case where we are replicating but all the neighbors already received the message
-			if(replicationFactor == 0 && ! isClosest)
-				sender.storeKey(this, sender);
 		}
 		//if there is at least one neighbor which didn't receive this message yet...
 		else{
@@ -70,11 +70,8 @@ public class PutMessage extends ForwardMessage {
 					mp.sendForwardMessage(sender, receiver, this);
 				else{
 					MessageProtocol.printPeerAction(sender, this, receiver.getID()+" isn't closer!");
-					//when a node can't find another neighbor during replication, then store it here
-					if(replicationFactor == 0)
-						sender.storeKey(this, sender);
 					//impossible case: if we are not replicating then isClosest must be true
-					else
+					if(replicationFactor == originalReplicationFactor)
 						throw new RuntimeException("replicationFactor="+replicationFactor+" isClosest="+isClosest);
 				}
 			}
