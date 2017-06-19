@@ -44,7 +44,8 @@ public class DarkPeer extends GeneralNode implements Comparable<DarkPeer> {
 	
 	public void storeKey(Message message, DarkPeer sender){
 		float locationKey = message.messageLocationKey;
-		storedKeys.add(locationKey);
+		if(!storedKeys.add(locationKey))
+			throw new RuntimeException(sender.getID()+" already stores "+message.messageLocationKey);
 		//notify the key generator that the key has been stored somewhere (so we can do get operation on it)
 		KeysGenerator.addStoredKey(locationKey);
 		MessageProtocol.printPeerAction(sender, message, "STORED HERE!");

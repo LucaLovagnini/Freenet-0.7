@@ -140,6 +140,11 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 	@Override
 	public void nextCycle(Node peer, int pid) {
 		
+		//when we don't print anything, we just print time
+		if(!verbose && peer.getID() == 0)
+			System.out.println("time="+CDState.getTime());		
+
+		
 		//at the first cycle, first peer, do 2000 random put operations
 		if(!put){
 			System.out.println("Doing random puts...");
@@ -151,45 +156,40 @@ public class MessageProtocol implements EDProtocol, CDProtocol {
 			}
 			System.out.println("Random puts done!");
 			put = true;
-		}
-		//when we don't print anything, we just print time
-		if(!verbose && peer.getID() == 0)
-			System.out.println("time="+CDState.getTime());		
-		
-		final long time = CDState.getTime();
-		//check if we have to swap location key
-		if(peer.getID()== 0 && time %swapFreq == 0){
-			for(int i=0; i<Network.size(); i++){
-				DarkPeer swappingPeer = (DarkPeer) Network.get(i);
-				//check if we have to swap location key
-				if(time %swapFreq == 0){
-					//randomly select a neighbor
-					final int peerToSwapIndex = (new Random(System.nanoTime())).nextInt(((LinkableProtocol) swappingPeer.getProtocol(lpId)).degree());
-					DarkPeer peerToSwap = (DarkPeer) ((LinkableProtocol) swappingPeer.getProtocol(lpId)).getNeighbor(peerToSwapIndex);
-					tryToSwap(swappingPeer, peerToSwap);
+		}else if(CDState.getTime()>0){	
+			final long time = CDState.getTime();
+			//check if we have to swap location key
+			if(peer.getID()== 0 && time %swapFreq == 0){
+				for(int i=0; i<Network.size(); i++){
+					DarkPeer swappingPeer = (DarkPeer) Network.get(i);
+					//check if we have to swap location key
+					if(time %swapFreq == 0){
+						//randomly select a neighbor
+						final int peerToSwapIndex = (new Random(System.nanoTime())).nextInt(((LinkableProtocol) swappingPeer.getProtocol(lpId)).degree());
+						DarkPeer peerToSwap = (DarkPeer) ((LinkableProtocol) swappingPeer.getProtocol(lpId)).getNeighbor(peerToSwapIndex);
+						tryToSwap(swappingPeer, peerToSwap);
+					}
+				}
+			}
+			
+			if(peer.getID() == 0){
+				for(int i=0; i<2000; i++){
+					int randomNodeIndex = (new Random(System.nanoTime())).nextInt(Network.size());
+					DarkPeer randomPeer = (DarkPeer) Network.get(randomNodeIndex);
+					Message message = null;
+					float getContentKey = KeysGenerator.getContentKeyForGet();
+					if(getContentKey != -1){
+						message = new GetMessage(randomPeer, KeysGenerator.getContentKeyForGet(), HTL);
+						printPeerAction(randomPeer, message, "GET GENERATED!");
+					}
+					else
+						printPeerAction(randomPeer, "doing a get message, but no key has been stored yet!");
+			
+					if(message != null)
+						message.doMessageAction(randomPeer, this);
 				}
 			}
 		}
-
-		
-		if(peer.getID() == 0){
-			for(int i=0; i<2000; i++){
-				int randomNodeIndex = (new Random(System.nanoTime())).nextInt(Network.size());
-				DarkPeer randomPeer = (DarkPeer) Network.get(randomNodeIndex);
-				Message message = null;
-				float getContentKey = KeysGenerator.getContentKeyForGet();
-				if(getContentKey != -1){
-					message = new GetMessage(randomPeer, KeysGenerator.getContentKeyForGet(), HTL);
-					printPeerAction(randomPeer, message, "GET GENERATED!");
-				}
-				else
-					printPeerAction(randomPeer, "doing a get message, but no key has been stored yet!");
-		
-				if(message != null)
-					message.doMessageAction(randomPeer, this);
-			}
-		}
-
 	}
 	
 	private void addToNeighbors(DarkPeer toAdd, LinkableProtocol toAddLp){
